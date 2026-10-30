@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Watchtower Preview</title>
+<style>
+  body { background: #2655ab; display: flex; flex-direction: column; align-items: center; padding: 20px; font-family: sans-serif; color: white; }
+  canvas { background: #1a3c75; border: 2px solid #ffd700; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .controls { margin-top: 15px; display: flex; gap: 15px; }
+</style>
+</head>
+<body>
+  <h2>Kenney Watchtower & Suspension Bridge Preview</h2>
+  <canvas id="cv" width="900" height="600"></canvas>
+  <div class="controls">
+    <label>Scale: <input type="range" id="sc" min="1" max="3" step="0.1" value="1.8"></label>
+    <label>Platform gz: <input type="range" id="pgz" min="0.5" max="1.5" step="0.05" value="0.95"></label>
+    <label>Roof gz: <input type="range" id="rgz" min="1.0" max="2.5" step="0.05" value="1.65"></label>
+  </div>
+
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    const assetNames = ['building-structure', 'building-platform', 'building-roof', 'ladder', 'bridge', 'tent', 'rocks-high', 'rocks-low', 'tree', 'tree-high', 'flag', 'plant'];
+    const assets = {};
+    let loaded = 0;
+
+    assetNames.forEach(name => {
+      const img = new Image();
+      img.onload = () => {
+        assets[name] = img;
+        loaded++;
+        if (loaded === assetNames.length) draw();
+      };
+      img.src = '../assets/env/' + name + '.png';
+    });
+
+    const tileW = 76;
+    const tileH = 38;
+    const tileZ = 24;
+
+    function iso(gx, gy, gz = 0, zoom = 1.8) {
+      const cx = cv.width / 2;
+      const cy = cv.height / 2 + 50;
+      const sx = (gx - gy) * (tileW / 2) * zoom + cx;
+      const sy = (gx + gy) * (tileH / 2) * zoom - (gz * tileZ * zoom) + cy;
+      return { sx, sy };
+    }
+
+    function draw() {
+      const zoom = parseFloat(document.getElementById('sc').value);
+      const platGz = parseFloat(document.getElementById('pgz').value);
+      const roofGz = parseFloat(document.getElementById('rgz').value);
+
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      const baseScale = (tileW / 48) * zoom;
+      const ANCHORS = {
+        'tree': { ax: 32, ay: 48, scaleMult: 1.15 },
+        'tree-high': { ax: 32, ay: 48, scaleMult: 1.25 },
+        'plant': { ax: 32, ay: 40, scaleMult: 0.95 },
+        'rocks-high': { ax: 32, ay: 54, scaleMult: 1.15 },
+        'rocks-low': { ax: 32, ay: 48, scaleMult: 1.0 },
+        'tent': { ax: 32, ay: 48, scaleMult: 1.15 },
+        'flag': { ax: 32, ay: 48, scaleMult: 1.0 },
+        'building-structure': { ax: 32, ay: 60, scaleMult: 1.0 },
+        'building-platform':  { ax: 32, ay: 60, scaleMult: 1.0 },
+        'building-roof':      { ax: 32, ay: 60, scaleMult: 1.0 },
+        'ladder':             { ax: 32, ay: 60, scaleMult: 1.0 },
+        'bridge':             { ax: 32, ay: 42, scaleMult: 1.05 }
+      };
+
+      // In Kenney's isometric standard:
+      // When stacking: structure gz = 0, platform gz = 1.0, roof gz = 1.75!
+      const props = [
+        // Hilltop Tower on Left:
+        { key: 'rocks-high',         gx: -1.3, gy: -0.6, gz: 0,    sm: 1.2 },
+        { key: 'building-structure', gx: -1.3, gy: -0.6, gz: 0.65, sm: 0.95 },
+        { key: 'building-platform',  gx: -1.3, gy: -0.6, gz: 0.65 + 1.0, sm: 0.95 },
+        { key: 'flag',               gx: -1.4, gy: -0.7, gz: 0.65 + 1.45, sm: 0.9 },
+
+        // Pine trees in the background
+        { key: 'tree-high',          gx: -2.0, gy: -0.2, gz: 0,    sm: 1.2 },
+        { key: 'tree',               gx: 0.2,  gy: -1.8, gz: 0,    sm: 1.0 },
+
+        // Middle Tower (with ladder):
+        { key: 'building-structure', gx: 0.0,  gy: 0.0,  gz: 0,    sm: 1.0 },
+        { key: 'building-platform',  gx: 0.0,  gy: 0.0,  gz: 1.0,  sm: 1.0 },
+        { key: 'ladder',             gx: 0.25, gy: 0.25, gz: 0.0,  sm: 1.0 },
+        { key: 'flag',               gx: -0.2, gy: -0.2, gz: 1.45, sm: 0.9 },
+
+        // Suspension Bridge connecting Tower A (0,0) and Tower B (1.3, 0):
+        { key: 'bridge',             gx: 0.65, gy: 0.0,  gz: 1.0,  sm: 1.05 },
+
+        // Right Tower (with roof):
+        { key: 'building-structure', gx: 1.3,  gy: 0.0,  gz: 0,    sm: 1.0 },
+        { key: 'building-platform',  gx: 1.3,  gy: 0.0,  gz: 1.0,  sm: 1.0 },
+        { key: 'building-roof',      gx: 1.3,  gy: 0.0,  gz: 1.75, sm: 1.05 },
+
+        // Surrounding camp:
+        { key: 'tent',               gx: 2.2,  gy: 0.8,  gz: 0,    sm: 1.1 },
+        { key: 'tree-high',          gx: 2.5,  gy: -0.8, gz: 0,    sm: 1.15 },
+        { key: 'tree',               gx: 2.9,  gy: 0.9,  gz: 0,    sm: 0.95 },
+        { key: 'plant',              gx: -0.5, gy: 0.8,  gz: 0,    sm: 0.9 },
+        { key: 'rocks-low',          gx: 1.5,  gy: -1.0, gz: 0,    sm: 0.9 }
+      ];
+
+      // Depth sort using true isometric painter's depth: (gx + gy) + gz * 0.15
+      const renderable = props.map(p => {
+        const { sx, sy } = iso(p.gx, p.gy, p.gz, zoom);
+        const depth = (p.gx + p.gy) + (p.gz || 0) * 0.15;
+        return { ...p, sx, sy, depth };
+      }).sort((a, b) => a.depth - b.depth);
+
+      renderable.forEach(p => {
+        const img = assets[p.key];
+        if (!img) return;
+        const anchor = ANCHORS[p.key] || { ax: 32, ay: 48, scaleMult: 1.0 };
+        const s = baseScale * (anchor.scaleMult || 1.0) * (p.sm || 1.0);
+        const sprW = 64 * s;
+        const sprH = 64 * s;
+        const drawX = p.sx - anchor.ax * s;
+        const drawY = p.sy - anchor.ay * s;
+
+        // Shadow under base objects
+        if (p.gz === 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.ellipse(p.sx, p.sy + 2 * zoom, sprW * 0.22, sprH * 0.1, 0, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+          ctx.fill();
+          ctx.restore();
+        }
+
+        ctx.drawImage(img, drawX, drawY, sprW, sprH);
+      });
+    }
+
+    document.getElementById('sc').oninput = draw;
+    document.getElementById('pgz').oninput = draw;
+    document.getElementById('rgz').oninput = draw;
+  </script>
+</body>
+</html>

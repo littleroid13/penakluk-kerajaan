@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalibrasi Kursi Tengah (The Champion's Chair) - Penakhlukan Kerajaan</title>
+  <script>
+    if (localStorage.getItem("ludo_licensed") !== "true") {
+      window.location.replace("index.html");
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: #0b132b;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h2 {
+      margin: 6px 0 10px;
+      color: #ffd700;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 14px;
+      text-align: center;
+      max-width: 800px;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid #334155;
+      padding: 14px 20px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      width: 100%;
+      max-width: 1100px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .control-label {
+      font-size: 12px;
+      color: #cbd5e1;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+    }
+    .val-badge {
+      color: #facc15;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    input[type="range"] {
+      cursor: pointer;
+      accent-color: #ffd700;
+      width: 100%;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 14px;
+      width: 100%;
+      max-width: 1100px;
+    }
+    button, a.btn {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid #475569;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    button:hover, a.btn:hover {
+      background: #334155;
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+    button.btn-primary {
+      background: #f59e0b;
+      color: #0b132b;
+      border-color: #d97706;
+      font-weight: bold;
+    }
+    button.btn-primary:hover {
+      background: #fbbf24;
+      color: #000;
+    }
+    button.btn-success {
+      background: #10b981;
+      color: #042f2e;
+      border-color: #059669;
+      font-weight: bold;
+    }
+    button.btn-success:hover {
+      background: #34d399;
+      color: #000;
+    }
+    canvas {
+      background: #0f172a;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+      max-width: 100%;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      background: #10b981;
+      color: #042f2e;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 999;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <h2><i class="fa-solid fa-crown"></i> Kalibrasi Kursi Tengah (The Champion's Chair)</h2>
+  <div class="subtitle">
+    Sesuaikan ukuran skala, titik tumpu (anchor), posisi offset, dan elevasi Tahta Tengah agar proporsional dengan petak jalur berakhir (ended tiles) dan kedalaman pion (depth sorting) tampak sempurna.
+  </div>
+
+  <div class="toolbar">
+    <div class="control-group">
+      <div class="control-label">
+        <span>Skala Kursi (Scale):</span>
+        <span id="scaleVal" class="val-badge">0.45</span>
+      </div>
+      <input type="range" id="scaleInput" min="0.20" max="0.80" step="0.01" value="0.45">
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Titik Tumpu X (Anchor X):</span>
+        <span id="anchorXVal" class="val-badge">0.532</span>
+      </div>
+      <input type="range" id="anchorXInput" min="0.30" max="0.70" step="0.005" value="0.532">
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Titik Tumpu Y (Anchor Y):</span>
+        <span id="anchorYVal" class="val-badge">0.984</span>
+      </div>
+      <input type="range" id="anchorYInput" min="0.70" max="1.00" step="0.004" value="0.984">
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Offset X (px):</span>
+        <span id="offXVal" class="val-badge">0</span>
+      </div>
+      <input type="range" id="offXInput" min="-40" max="40" step="1" value="0">
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Offset Y (px):</span>
+        <span id="offYVal" class="val-badge">0</span>
+      </div>
+      <input type="range" id="offYInput" min="-40" max="40" step="1" value="0">
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Elevasi Tahta (GZ):</span>
+        <span id="gzVal" class="val-badge">1.25</span>
+      </div>
+      <input type="range" id="gzInput" min="0.50" max="2.00" step="0.05" value="1.25">
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="btnSave" class="btn-success"><i class="fa-solid fa-floppy-disk"></i> Simpan ke Permainan (localStorage)</button>
+    <button id="btnReset"><i class="fa-solid fa-rotate-left"></i> Reset ke Standar</button>
+    <button id="btnTogglePawns"><i class="fa-solid fa-chess-pawn"></i> Sembunyikan / Tampilkan Pion</button>
+    <button id="btnCopyConfig"><i class="fa-solid fa-copy"></i> Salin Kode Konfigurasi</button>
+    <a href="game.html" class="btn"><i class="fa-solid fa-gamepad"></i> Ke Layar Gameplay</a>
+    <a href="index.html" class="btn"><i class="fa-solid fa-house"></i> Ke Lobby</a>
+  </div>
+
+  <canvas id="cv" width="1000" height="640"></canvas>
+
+  <div id="toast" class="toast"><i class="fa-solid fa-circle-check"></i> Pengaturan berhasil disimpan ke Permainan!</div>
+
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+
+    const DEFAULT_CONFIG = {
+      scale: 0.45,
+      anchorX: 0.532,
+      anchorY: 0.984,
+      offsetX: 0,
+      offsetY: 0,
+      elevationGZ: 1.25
+    };
+
+    let config = { ...DEFAULT_CONFIG };
+
+    // Load from localStorage if present
+    try {
+      const saved = localStorage.getItem('penakhlukan_throne_config');
+      if (saved) {
+        config = { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
+      }
+    } catch (e) {
+      console.warn('Gagal memuat konfigurasi dari localStorage', e);
+    }
+
+    // UI elements
+    const scaleInput = document.getElementById('scaleInput');
+    const anchorXInput = document.getElementById('anchorXInput');
+    const anchorYInput = document.getElementById('anchorYInput');
+    const offXInput = document.getElementById('offXInput');
+    const offYInput = document.getElementById('offYInput');
+    const gzInput = document.getElementById('gzInput');
+
+    const scaleVal = document.getElementById('scaleVal');
+    const anchorXVal = document.getElementById('anchorXVal');
+    const anchorYVal = document.getElementById('anchorYVal');
+    const offXVal = document.getElementById('offXVal');
+    const offYVal = document.getElementById('offYVal');
+    const gzVal = document.getElementById('gzVal');
+
+    function syncUI() {
+      scaleInput.value = config.scale;
+      anchorXInput.value = config.anchorX;
+      anchorYInput.value = config.anchorY;
+      offXInput.value = config.offsetX;
+      offYInput.value = config.offsetY;
+      gzInput.value = config.elevationGZ;
+
+      scaleVal.textContent = parseFloat(config.scale).toFixed(2);
+      anchorXVal.textContent = parseFloat(config.anchorX).toFixed(3);
+      anchorYVal.textContent = parseFloat(config.anchorY).toFixed(3);
+      offXVal.textContent = config.offsetX;
+      offYVal.textContent = config.offsetY;
+      gzVal.textContent = parseFloat(config.elevationGZ).toFixed(2);
+    }
+
+    scaleInput.addEventListener('input', e => { config.scale = parseFloat(e.target.value); syncUI(); });
+    anchorXInput.addEventListener('input', e => { config.anchorX = parseFloat(e.target.value); syncUI(); });
+    anchorYInput.addEventListener('input', e => { config.anchorY = parseFloat(e.target.value); syncUI(); });
+    offXInput.addEventListener('input', e => { config.offsetX = parseInt(e.target.value, 10); syncUI(); });
+    offYInput.addEventListener('input', e => { config.offsetY = parseInt(e.target.value, 10); syncUI(); });
+    gzInput.addEventListener('input', e => { config.elevationGZ = parseFloat(e.target.value); syncUI(); });
+
+    let showPawns = true;
+    document.getElementById('btnTogglePawns').addEventListener('click', () => {
+      showPawns = !showPawns;
+    });
+
+    const toast = document.getElementById('toast');
+    function showToast(msg) {
+      toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${msg}`;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+
+    document.getElementById('btnSave').addEventListener('click', () => {
+      localStorage.setItem('penakhlukan_throne_config', JSON.stringify(config));
+      showToast('Pengaturan Tahta tersimpan ke Permainan!');
+    });
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      config = { ...DEFAULT_CONFIG };
+      localStorage.removeItem('penakhlukan_throne_config');
+      syncUI();
+      showToast('Pengaturan direset ke default standar!');
+    });
+
+    document.getElementById('btnCopyConfig').addEventListener('click', () => {
+      const snippet = `const THRONE_SCALE = ${config.scale};\nconst THRONE_ANCHOR_X = ${config.anchorX};\nconst THRONE_ANCHOR_Y = ${config.anchorY};\nconst THRONE_OFFSET_X = ${config.offsetX};\nconst THRONE_OFFSET_Y = ${config.offsetY};\nconst THRONE_ELEVATION_GZ = ${config.elevationGZ};`;
+      navigator.clipboard.writeText(snippet);
+      showToast('Konfigurasi JS tersalin ke clipboard!');
+    });
+
+    syncUI();
+
+    // Asset loading
+    const images = {};
+    const assetList = [
+      { key: 'throne', src: 'assets/tiles/center-chair.png' },
+      { key: 'tile-blue', src: 'assets/tiles/tile-ended-blue.png' },
+      { key: 'tile-green', src: 'assets/tiles/tile-ended-green.png' },
+      { key: 'tile-red', src: 'assets/tiles/tile-ended-red.png' },
+      { key: 'tile-yellow', src: 'assets/tiles/tile-ended-yellow.png' },
+      { key: 'tile-normal', src: 'assets/tiles/tile-normal.png' },
+      { key: 'pawn-blue', src: 'assets/pawns/pawn-wolf-blue.png' },
+      { key: 'pawn-green', src: 'assets/pawns/pawn-elf-green.png' },
+      { key: 'pawn-red', src: 'assets/pawns/pawn-dragon-red.png' },
+      { key: 'pawn-yellow', src: 'assets/pawns/pawn-crown-yellow.png' }
+    ];
+
+    let assetsLoaded = 0;
+    assetList.forEach(item => {
+      const img = new Image();
+      img.onload = () => {
+        images[item.key] = img;
+        assetsLoaded++;
+      };
+      img.onerror = () => {
+        // Fallback for path differences
+        if (item.src.includes('pawns/')) {
+          const fb = new Image();
+          fb.onload = () => { images[item.key] = fb; assetsLoaded++; };
+          fb.src = item.src.replace('pawns/', 'pawn/');
+        } else {
+          assetsLoaded++;
+        }
+      };
+      img.src = item.src;
+    });
+
+    // Isometric projection math
+    const TILE_W = 76;
+    const TILE_H = 38;
+    const TILE_Z = 24;
+
+    function isoToScreen(gx, gy, gz = 0) {
+      const cx = cv.width / 2;
+      const cy = cv.height / 2 + 30;
+      const sx = cx + (gx - gy) * (TILE_W / 2);
+      const sy = cy + (gx + gy) * (TILE_H / 2) - (gz * TILE_Z);
+      return { sx, sy };
+    }
+
+    function drawIsoTile(gx, gy, gz, img, fallbackColor) {
+      const { sx, sy } = isoToScreen(gx, gy, gz);
+      if (img) {
+        const w = 88;
+        const h = 88;
+        ctx.drawImage(img, sx - w / 2, sy - h + 22, w, h);
+      } else {
+        // Fallback polygon
+        const hw = TILE_W / 2;
+        const hh = TILE_H / 2;
+        ctx.fillStyle = fallbackColor || '#334155';
+        ctx.strokeStyle = '#000';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - hh);
+        ctx.lineTo(sx + hw, sy);
+        ctx.lineTo(sx, sy + hh);
+        ctx.lineTo(sx - hw, sy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    function drawPawn(gx, gy, gz, img, label) {
+      const { sx, sy } = isoToScreen(gx, gy, gz);
+      const scale = 0.30;
+      const anchorX = 0.50;
+      const anchorY = 0.951;
+
+      // Drop shadow
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, 14, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      if (img) {
+        const w = img.width * scale;
+        const h = img.height * scale;
+        const dx = sx - w * anchorX;
+        const dy = sy - h * anchorY - 1;
+        ctx.drawImage(img, dx, dy, w, h);
+      } else {
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(sx, sy - 20, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Label tag
+      if (label) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1;
+        ctx.font = '11px sans-serif';
+        const tw = ctx.measureText(label).width;
+        ctx.fillRect(sx - tw / 2 - 5, sy - 72, tw + 10, 16);
+        ctx.strokeRect(sx - tw / 2 - 5, sy - 72, tw + 10, 16);
+        ctx.fillStyle = '#f8fafc';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, sx, sy - 60);
+        ctx.restore();
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      // Grid background guides
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < cv.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, cv.height); ctx.stroke();
+      }
+      for (let y = 0; y < cv.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cv.width, y); ctx.stroke();
+      }
+
+      // Collect render entities for isometric depth sorting
+      const entities = [];
+
+      // Finish Lanes leading inward (Arm 0: Atas/Blue, Arm 1: Kanan/Green, Arm 2: Bawah/Red, Arm 3: Kiri/Yellow)
+      // 1. Blue finish lane (North: gy = -3 to -1, gx = 0)
+      for (let i = 3; i >= 1; i--) {
+        const gz = 0.5 + (3 - i) * 0.35;
+        entities.push({
+          depth: 0 - i + gz * 0.2,
+          type: 'tile',
+          gx: 0, gy: -i, gz,
+          img: i === 1 ? (images['tile-blue'] || images['tile-normal']) : images['tile-normal'],
+          color: '#3b82f6'
+        });
+      }
+
+      // 2. Yellow finish lane (West: gx = -3 to -1, gy = 0)
+      for (let i = 3; i >= 1; i--) {
+        const gz = 0.5 + (3 - i) * 0.35;
+        entities.push({
+          depth: -i + 0 + gz * 0.2,
+          type: 'tile',
+          gx: -i, gy: 0, gz,
+          img: i === 1 ? (images['tile-yellow'] || images['tile-normal']) : images['tile-normal'],
+          color: '#eab308'
+        });
+      }
+
+      // 3. Green finish lane (East: gx = 1 to 3, gy = 0)
+      for (let i = 1; i <= 3; i++) {
+        const gz = 1.2 - (i - 1) * 0.35;
+        entities.push({
+          depth: i + 0 + gz * 0.2,
+          type: 'tile',
+          gx: i, gy: 0, gz,
+          img: i === 1 ? (images['tile-green'] || images['tile-normal']) : images['tile-normal'],
+          color: '#22c55e'
+        });
+      }
+
+      // 4. Red finish lane (South: gy = 1 to 3, gx = 0)
+      for (let i = 1; i <= 3; i++) {
+        const gz = 1.2 - (i - 1) * 0.35;
+        entities.push({
+          depth: 0 + i + gz * 0.2,
+          type: 'tile',
+          gx: 0, gy: i, gz,
+          img: i === 1 ? (images['tile-red'] || images['tile-normal']) : images['tile-normal'],
+          color: '#ef4444'
+        });
+      }
+
+      // 5. Central Iron Throne / The Champion's Chair
+      const THRONE_DEPTH = 100;
+      entities.push({
+        depth: THRONE_DEPTH,
+        type: 'throne'
+      });
+
+      // 6. Test Pawns to verify depth sorting
+      if (showPawns) {
+        // Pawn North (behind throne)
+        entities.push({
+          depth: 50 + (0 - 1) + 1.2 * 0.2,
+          type: 'pawn',
+          gx: 0, gy: -1, gz: 1.2,
+          img: images['pawn-blue'],
+          label: 'Pion Biru (Di Belakang Tahta)'
+        });
+
+        // Pawn West (behind throne)
+        entities.push({
+          depth: 50 + (-1 + 0) + 1.2 * 0.2,
+          type: 'pawn',
+          gx: -1, gy: 0, gz: 1.2,
+          img: images['pawn-yellow'],
+          label: 'Pion Kuning (Di Belakang Tahta)'
+        });
+
+        // Pawn on Throne
+        entities.push({
+          depth: THRONE_DEPTH + 1,
+          type: 'pawn',
+          gx: 0, gy: 0, gz: config.elevationGZ,
+          img: images['pawn-green'],
+          label: 'Pion Hijau (Di Atas Tahta)'
+        });
+
+        // Pawn South (in front of throne)
+        entities.push({
+          depth: 150 + (0 + 1) + 1.2 * 0.2,
+          type: 'pawn',
+          gx: 0, gy: 1, gz: 1.2,
+          img: images['pawn-red'],
+          label: 'Pion Merah (Di Depan Tahta)'
+        });
+      }
+
+      // Sort entities by depth (Painter's Algorithm)
+      entities.sort((a, b) => a.depth - b.depth);
+
+      // Render each entity
+      entities.forEach(ent => {
+        if (ent.type === 'tile') {
+          drawIsoTile(ent.gx, ent.gy, ent.gz, ent.img, ent.color);
+        } else if (ent.type === 'pawn') {
+          drawPawn(ent.gx, ent.gy, ent.gz, ent.img, ent.label);
+        } else if (ent.type === 'throne') {
+          const { sx, sy } = isoToScreen(0, 0, config.elevationGZ);
+
+          // Aura gradient
+          const aura = ctx.createRadialGradient(sx, sy - 28, 6, sx, sy - 28, 65);
+          aura.addColorStop(0, 'rgba(255, 215, 0, 0.35)');
+          aura.addColorStop(0.6, 'rgba(255, 183, 3, 0.12)');
+          aura.addColorStop(1, 'rgba(255, 215, 0, 0)');
+          ctx.fillStyle = aura;
+          ctx.beginPath();
+          ctx.arc(sx, sy - 28, 65, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Champion's Chair
+          const img = images['throne'];
+          if (img) {
+            const w = img.width * config.scale;
+            const h = img.height * config.scale;
+            const dx = sx - w * config.anchorX + config.offsetX;
+            const dy = sy - h * config.anchorY + config.offsetY;
+            ctx.drawImage(img, dx, dy, w, h);
+
+            // Crosshair indicator on pedestal anchor point
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(sx - 10, sy); ctx.lineTo(sx + 10, sy);
+            ctx.moveTo(sx, sy - 10); ctx.lineTo(sx, sy + 10);
+            ctx.stroke();
+          }
+        }
+      });
+
+      requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

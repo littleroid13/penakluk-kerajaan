@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PENAKHLUKAN KERAJAAN - Arena Permainan</title>
+    <link rel="stylesheet" href="css/medieval.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
+
+    <!-- KaTeX for Math & Science Formula Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- License Verification Guard -->
+    <script>
+        if (localStorage.getItem("ludo_licensed") !== "true") {
+            window.location.replace("index.html");
+        }
+    </script>
+</head>
+<body style="overflow: hidden; margin: 0; padding: 0;">
+
+    <!-- ==========================================
+         FULLSCREEN GAMEPLAY SCREEN
+    =========================================== -->
+    <div class="game-screen" id="gameScreen">
+        <!-- Top HUD Bar: Transparent & Clean -->
+        <header class="hud-top-bar">
+            <!-- Active Turn Banner -->
+            <div class="hud-turn-card" id="hudTurnBar">
+                <div class="turn-crest" id="turnTeamIcon">🐉</div>
+                <div class="turn-info">
+                    <div class="turn-team-title" id="turnTeamName">Tim Naga Api</div>
+                    <div class="turn-motto-text" id="turnMotto">"Api Abadi Menguasai Takhta!"</div>
+                </div>
+                <div class="round-badge" id="turnRoundBadge">RONDE 1</div>
+            </div>
+
+            <!-- Controls: Icon Only (Logo Sahaja) & Tanpa Tombol Soal -->
+            <div class="hud-right-controls">
+                <button type="button" class="btn-hud-icon btn-end-game" id="btnEndGame" title="Selesaikan Permainan Lebih Cepat">🏁 Akhiri</button>
+                <button type="button" class="btn-hud-icon" id="btnFullscreen" title="Layar Penuh (Fullscreen)">⛶</button>
+                <button type="button" class="btn-hud-icon" id="btnGameOptions" title="Pengaturan Suara">⚙️</button>
+                <button type="button" class="btn-hud-icon" id="btnRules" title="Aturan Permainan">📜</button>
+                <button type="button" class="btn-hud-icon btn-toggle-sound" id="btnSound" title="Suara">🔊</button>
+                <button type="button" class="btn-hud-icon" id="btnBackToLobby" title="Kembali ke Lobby">🏰</button>
+            </div>
+        </header>
+
+        <!-- Isometric 3D Board Canvas (Full Viewport) -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Floating Map Navigation (Zoom In / Out & Reset Center) -->
+        <div class="hud-map-nav" id="hudMapNav">
+            <button type="button" class="btn-map-nav" id="btnZoomIn" title="Perbesar Peta (Zoom In)">➕</button>
+            <button type="button" class="btn-map-nav" id="btnResetView" title="Pusatkan Peta (Reset View)">🎯</button>
+            <button type="button" class="btn-map-nav" id="btnZoomOut" title="Perkecil Peta (Zoom Out)">➖</button>
+        </div>
+
+        <!-- Bottom Left: 4 Teams Transparent Scoreboard -->
+        <aside class="hud-teams-scoreboard" id="teamsScoreList"></aside>
+
+        <!-- Bottom Right: 3D Dice Dock -->
+        <aside class="hud-dice-dock" id="diceContainer"></aside>
+    </div>
+
+    <!-- ==========================================
+         MODAL: TRUTH (5 TIPE SOAL EDUKASI)
+    =========================================== -->
+    <div class="modal-overlay hidden" id="truthModal">
+        <div class="modal-parchment-frame">
+            <div class="modal-header-banner">
+                <span class="banner-icon">📜</span>
+                <div>
+                    <h2>KITAB KUNO KERAJAAN (TRUTH)</h2>
+                    <span class="truth-category-badge" id="truthCategory">English Vocab</span>
+                </div>
+            </div>
+
+            <div class="truth-question-text" id="truthQuestionText">Pertanyaan akan dimuat di sini...</div>
+            <div id="truthQuestionContent"></div>
+
+            <button type="button" class="btn-royal-submit" id="btnTruthSubmit">KIRIM JAWABAN ✨</button>
+
+            <!-- Feedback result banner -->
+            <div class="truth-feedback hidden" id="truthFeedback"></div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: DARE (TANTANGAN KELAS DENGAN GURU)
+    =========================================== -->
+    <div class="modal-overlay hidden" id="dareModal">
+        <div class="modal-parchment-frame">
+            <div class="modal-header-banner">
+                <span class="banner-icon">🎭</span>
+                <div>
+                    <h2>TANTANGAN TOPENG ISTANA (DARE)</h2>
+                    <small>Uji keberanian & kekompakan kelas!</small>
+                </div>
+            </div>
+
+            <div class="dare-banner">
+                <span class="dare-badge" id="dareBadge">Tongue Twister</span>
+                <span class="dare-timer" id="dareTimer">20s</span>
+            </div>
+
+            <div class="dare-prompt-card">
+                <h3 class="dare-instruction-text" id="dareTitle">Judul Tantangan</h3>
+                <p id="dareInstruction" style="margin-bottom: 8px; font-weight:600; color:#582f0e;"></p>
+                <div class="dare-quote" id="darePromptText">Teks tantangan...</div>
+            </div>
+
+            <p style="text-align: center; font-size: 0.85rem; color:#582f0e; font-weight:700;">
+                ⚖️ Penilaian Guru & Rekan Sekelas:
+            </p>
+
+            <div class="teacher-grade-buttons">
+                <button type="button" class="btn-grade success" id="btnDareSuccess">
+                    ✅ BERHASIL (+70 POIN)
+                </button>
+                <button type="button" class="btn-grade fail" id="btnDareFail">
+                    ❌ GAGAL (0 POIN)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: DUEL CLASH (ADU CEPAT JAWAB SOAL)
+    =========================================== -->
+    <div class="modal-overlay hidden" id="duelModal">
+        <div class="modal-parchment-frame wide duel-frame">
+            <div class="modal-header-banner">
+                <span class="banner-icon">⚔️</span>
+                <div>
+                    <h2>DUEL PENAKHLUKAN: ADU CEPAT KERAJAAN!</h2>
+                    <small>Dua prajurit bertemu di petak yang sama! Siapa cepat menjawab benar berhak bertahan!</small>
+                </div>
+            </div>
+
+            <!-- Matchup Card -->
+            <div class="duel-matchup-bar">
+                <div class="duel-team-card attacker" id="duelAttackerCard">
+                    <span class="d-icon" id="duelAttackerIcon">🐉</span>
+                    <div class="d-text">
+                        <span class="d-name" id="duelAttackerName">Tim Penyerang</span>
+                        <span class="d-badge">PENYERANG</span>
+                    </div>
+                </div>
+                <div class="duel-vs-circle">VS</div>
+                <div class="duel-team-card defender" id="duelDefenderCard">
+                    <span class="d-icon" id="duelDefenderIcon">🛡️</span>
+                    <div class="d-text">
+                        <span class="d-name" id="duelDefenderName">Tim Bertahan</span>
+                        <span class="d-badge">BERTAHAN</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Duel Question Box -->
+            <div class="duel-question-box">
+                <span class="truth-category-badge" id="duelCategory">English Vocab</span>
+                <div class="truth-question-text" id="duelQuestionText">Pertanyaan duel...</div>
+            </div>
+
+            <!-- Buzzer Stage -->
+            <div class="duel-buzzer-stage" id="duelBuzzerStage">
+                <p style="text-align: center; font-weight: 700; margin-bottom: 12px; color: #4a2800;">
+                    🔔 TEKAN BEL TIM KAMU PALING CEPAT UNTUK BERHAK MENJAWAB!
+                </p>
+                <div class="duel-buzzer-grid">
+                    <button type="button" class="btn-duel-buzzer attacker" id="btnBuzzerAttacker">
+                        <span class="b-icon">🔔</span>
+                        <span class="b-label" id="lblBuzzerAttacker">BEL PENYERANG</span>
+                    </button>
+                    <button type="button" class="btn-duel-buzzer defender" id="btnBuzzerDefender">
+                        <span class="b-icon">🔔</span>
+                        <span class="b-label" id="lblBuzzerDefender">BEL BERTAHAN</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Answer Stage (Active after a team buzzes) -->
+            <div class="duel-answer-stage hidden" id="duelAnswerStage">
+                <div class="duel-answering-banner" id="duelAnsweringBanner">
+                    <span id="duelAnsweringTeam">Tim sedang menjawab...</span>
+                    <span class="dare-timer" id="duelTimer">10s</span>
+                </div>
+                <div id="duelAnswerContent"></div>
+            </div>
+
+            <!-- Result Stage -->
+            <div class="duel-result-stage hidden" id="duelResultStage">
+                <div class="duel-result-banner" id="duelResultBanner"></div>
+                <button type="button" class="btn-royal-proceed" id="btnContinueDuel">Lanjut Permainan ➡️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: SPECIAL DICE ITEM
+    =========================================== -->
+    <div class="modal-overlay hidden" id="specialDiceModal">
+        <div class="modal-parchment-frame">
+            <div id="specialDiceContent"></div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: WEIRD DICE EVENT
+    =========================================== -->
+    <div class="modal-overlay hidden" id="weirdDiceModal">
+        <div class="modal-parchment-frame">
+            <div id="weirdDiceContent"></div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: PILIHAN AKSI TAKTIS (SPECIAL & WEIRD DICE)
+    =========================================== -->
+    <div class="modal-overlay hidden" id="actionChoiceModal">
+        <div class="modal-parchment-frame" style="max-width: 520px;">
+            <div class="modal-header-banner">
+                <span class="banner-icon" id="actionChoiceIcon">✨</span>
+                <div>
+                    <h2 id="actionChoiceTitle">PILIHAN AKSI TAKTIS</h2>
+                    <small id="actionChoiceSubtitle">Pilih aksi atau target Anda</small>
+                </div>
+            </div>
+            <div id="actionChoiceBody" style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: PAWN PICKER (PILIH PION DARI 4 PION)
+    =========================================== -->
+    <div class="modal-overlay hidden" id="pawnPickerModal">
+        <div class="modal-parchment-frame">
+            <div class="modal-header-banner">
+                <span class="banner-icon">♟️</span>
+                <div>
+                    <h2>PILIH PRAJURIT MUNGIL</h2>
+                    <small id="pawnPickerRollInfo">Hasil Dadu: 4</small>
+                </div>
+            </div>
+            <p style="font-size:0.95rem; font-weight:600; margin-bottom:10px; color:#4a2800;">
+                Tentukan dari 4 prajuritmu mana yang akan melangkah maju:
+            </p>
+            <div class="pawn-picker-grid" id="pawnPickerList"></div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: ATURAN PERMAINAN
+    =========================================== -->
+    <div class="modal-overlay hidden" id="rulesModal">
+        <div class="modal-parchment-frame">
+            <button type="button" class="modal-close-btn">&times;</button>
+            <div class="modal-header-banner">
+                <span class="banner-icon">📜</span>
+                <div>
+                    <h2>ATURAN PENAKHLUKAN KERAJAAN</h2>
+                    <small>Pedoman Board Game Ludo Abad Pertengahan</small>
+                </div>
+            </div>
+
+            <div style="font-size: 0.92rem; line-height: 1.5; color: #2b1810; display:flex; flex-direction:column; gap:10px;">
+                <p><strong>🎯 Tujuan:</strong> Sebanyak 4 tim berpacu mengitari 44 petak batu kastil kuno dan membawa seluruh prajuritnya masuk ke <strong>Tahta Besi Emas</strong> di pusat peta!</p>
+                <p><strong>🚪 Keluar Base & Pintu Keluar (Dadu 6):</strong> Pion hanya dapat keluar dari Base jika tim mendapatkan <strong>angka dadu 6</strong>. Pion tidak langsung melangkah di lintasan, melainkan <strong>stay di platform Pintu Keluar</strong>. Tim kemudian mendapatkan <strong>lemparan dadu kedua (Bonus Roll)</strong>, dan pada lemparan inilah pion mulai melangkah masuk ke jalur arena sesuai angka dadu yang didapatkan!</p>
+                <p><strong>🔄 Putaran 1 Kali Penuh (Lap Mechanic):</strong> Sesuai aturan Ludo otentik, pion harus memutari papan <strong>1 kali putaran penuh (44 petak)</strong>. Titik masuk menuju jalur finish (tangga tahta) berada <strong>tepat sebelum petak keluar base masing-masing</strong>!</p>
+                <p><strong>⚔️ Duel Adu Cepat:</strong> Jika mendarat di petak luar yang sedang ditempati musuh, jendela <strong>Duel Tantangan</strong> akan terbuka! Adu cepat pencet bel dan jawab soal. Pemenang mempertahankan petak dan menendang musuh ke base! Jika keduanya salah, keduanya mundur ke petak sebelumnya.</p>
+                <p><strong>👑 Kemenangan (Ruler of the Realm):</strong> Setiap pion yang mencapai Tahta memberikan <strong>+200 poin</strong>. Tim pertama yang seluruh pionnya berhasil masuk ke Tahta dinobatkan sebagai <strong>"Ruler of the Realm"</strong> dan berhak atas bonus <strong>+500 poin</strong> yang memicu akhir permainan!</p>
+                <p><strong>📜 Petak TRUTH (Kitab Kuno):</strong> Menjawab soal edukasi (Pilihan Ganda, Benar/Salah, Menjodohkan, Urutkan, Isian Singkat). Benar = +100 poin & tetap di tempat. Salah = mundur ke petak sebelum lemparan dadu!</p>
+                <p><strong>🎭 Petak DARE (Topeng Istana):</strong> Tantangan kelas seru (Tongue Twister, Pantomim, Pidato Raja, dll.). Guru / Rekan kelas klik: Berhasil = +70 poin!</p>
+                <p><strong>💎 Petak TREASURE (Peti Emas):</strong> Menemukan harta karun kerajaan! Langsung dapat bonus instan +150 poin.</p>
+                <p><strong>🎲 Petak Dadu Emas (Special Dice):</strong> Memutar dadu 3D emas berhadiah 6 kekuatan taktis:
+                <br>• <strong>🍀 Lucky Dice:</strong> Mengocok dadu kembali dengan bebas memilih angka dadu (1-6).
+                <br>• <strong>🛡️ Immunity:</strong> Mendapatkan Shield (kebal 1x dari tendangan, kesalahan soal, mind control, dan swap place).
+                <br>• <strong>⏳ Steal Turn:</strong> Mencuri jatah giliran tim lawan pilihan dan mendapat giliran ekstra.
+                <br>• <strong>🧠 Mind Control:</strong> Memundurkan 1 pion lawan pilihan sebanyak 3 langkah ke belakang.
+                <br>• <strong>🎲 Extra Roll:</strong> Memperoleh 1 kali lagi lemparan dadu segera.
+                <br>• <strong>💰 Steal Point:</strong> Mencuri 50 poin dari salah satu tim lawan yang memiliki poin.
+                </p>
+                <p><strong>🌀 Petak Dadu Misteri (Weird Dice):</strong> Memutar dadu 3D aneh dengan 6 peristiwa tak terduga:
+                <br>• <strong>🍌 Ouch Banana:</strong> Terpeleset kulit pisang dan mundur 2 langkah.
+                <br>• <strong>🪤 Bear Trap:</strong> Terjepit perangkap beruang dan kehilangan 20 poin.
+                <br>• <strong>🔄 Swap Place:</strong> Bertukar tempat dengan pion lawan aktif (kebal pada lawan ber-Shield).
+                <br>• <strong>🎃 Trick or Treat:</strong> Uji pertanyaan dadakan, jika salah mendapat penalti -20 poin.
+                <br>• <strong>⏪ Reverse:</strong> Mengocok dadu lagi dan melangkah mundur sesuai angka dadu.
+                <br>• <strong>🧲 Magnet:</strong> Berpindah ke tile lawan terdekat dan memaksa duel tantangan!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: KONFIRMASI END GAME (SELESAIKAN LEBIH CEPAT)
+    =========================================== -->
+    <div class="modal-overlay hidden" id="endGameConfirmModal">
+        <div class="modal-parchment-frame text-center" style="max-width: 500px; padding: 26px 24px;">
+            <div class="modal-header-banner">
+                <span class="banner-icon">⚔️</span>
+                <div>
+                    <h2>AKHIRI PERMAINAN SEKARANG?</h2>
+                    <small>Konfirmasi Penyelesaian Laga Kerajaan</small>
+                </div>
+            </div>
+
+            <div style="font-size: 0.95rem; line-height: 1.6; color: #3d2314; margin: 18px 0; text-align: center;">
+                <p style="font-weight: 700; font-size: 1.05rem; margin-bottom: 8px;">
+                    Apakah Yang Mulia ingin menyelesaikan laga sekarang?
+                </p>
+                <p style="color: #6a4422; font-size: 0.88rem;">
+                    Permainan akan langsung dihentikan dan <strong>Piagam Perkamen Leaderboard</strong> akan menampilkan urutan peringkat skor akhir serta rekapitulasi soal yang berhasil dijawab benar oleh setiap tim.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 14px; justify-content: center; margin-top: 20px;">
+                <button type="button" class="btn-royal-submit" id="btnCancelEndGame" style="background: linear-gradient(180deg, #6c757d, #495057); box-shadow: 0 4px 0 #343a40; min-width: 140px; padding: 10px 18px;">
+                    ❌ Lanjut Main
+                </button>
+                <button type="button" class="btn-royal-submit" id="btnConfirmEndGame" style="background: linear-gradient(180deg, #e63946, #b7094c); box-shadow: 0 4px 0 #800f2f; min-width: 180px; padding: 10px 18px;">
+                    🏁 Ya, Akhiri Game!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: END-GAME PIAGAM LEADERBOARD
+    =========================================== -->
+    <div class="modal-overlay hidden" id="leaderboardModal">
+        <div class="piagam-frame">
+            <div class="piagam-winner-banner" id="leaderboardWinnerBanner">
+                <div class="winner-crown">👑</div>
+                <h2 class="winner-title">RULER OF THE REALM!</h2>
+                <div class="winner-team-name">Pemenang Tahta</div>
+                <div class="winner-subtitle">"Menaklukkan Tahta Besi Emas Abadi!"</div>
+            </div>
+
+            <div class="parchment-rows-container" id="leaderboardRows"></div>
+
+            <div class="piagam-actions">
+                <button type="button" class="btn-royal-action btn-back-lobby" id="btnBackLobbyLeaderboard">
+                    🏰 Kembali Ke Lobby
+                </button>
+                <button type="button" class="btn-royal-action btn-play-again" id="btnPlayAgain">
+                    🔄 Bermain Lagi
+                </button>
+                <button type="button" class="btn-royal-action btn-export-excel" id="btnExportExcel" style="background: linear-gradient(180deg, #107c41, #0b532c); border-color: #2b884f;">
+                    📊 Unduh Laporan Excel (.xlsx)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===========================================
+         MODAL: PENGATURAN SUARA (AUDIO SETTINGS)
+    =========================================== -->
+    <div class="modal-overlay hidden" id="audioSettingsModal">
+        <div class="modal-box" style="max-width: 440px;">
+            <div class="modal-header">
+                <span class="modal-badge-icon">⚙️</span>
+                <h3 class="modal-title">Pengaturan Suara</h3>
+                <button type="button" class="modal-close-btn" id="closeAudioSettingsBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; color: #4a2800; font-size: 0.95rem; margin-bottom: 6px;">
+                        <span>🎵 Musik Latar (BGM):</span>
+                        <span id="bgmVolumeVal" style="color: #b45309;">70%</span>
+                    </div>
+                    <input type="range" id="bgmVolumeSlider" min="0" max="100" value="70" style="width: 100%; accent-color: #d97706; cursor: pointer;">
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; color: #4a2800; font-size: 0.95rem; margin-bottom: 6px;">
+                        <span>🔊 Efek Suara (SFX):</span>
+                        <span id="sfxVolumeVal" style="color: #b45309;">80%</span>
+                    </div>
+                    <input type="range" id="sfxVolumeSlider" min="0" max="100" value="80" style="width: 100%; accent-color: #d97706; cursor: pointer;">
+                </div>
+
+                <div style="margin-top: 10px; display: flex; justify-content: center;">
+                    <button type="button" class="btn-royal-submit" id="btnCloseAudioSettings" style="min-width: 120px; padding: 8px 18px;">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script modules in correct dependency order -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/factions.js"></script>
+    <script src="js/questions.js"></script>
+    <script src="js/dares.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/dice.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- Floating Copyright Footer -->
+    <div id="copyright-footer">© 2026 littleroid13. All rights reserved.</div>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Preview 3D Isometric Tiles - Penaklukan Kerajaan</title>
+<style>
+  body { background: #0c1b3d; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
+  canvas { background: #1a3770; border: 2px solid #facc15; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+  .controls { display: flex; gap: 20px; margin-top: 15px; background: rgba(0,0,0,0.4); padding: 12px 20px; border-radius: 8px; flex-wrap: wrap; }
+  label { font-size: 14px; font-weight: bold; display: flex; flex-direction: column; gap: 4px; }
+  input[type=range] { width: 140px; }
+  span.val { color: #facc15; font-size: 13px; }
+  .legend { margin-top: 12px; display: flex; gap: 15px; font-size: 13px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .color-dot { width: 12px; height: 12px; border-radius: 50%; }
+</style>
+</head>
+<body>
+  <h2>Penaklukan Kerajaan - Preview 3D Isometric Faction Tiles</h2>
+  <canvas id="cv" width="960" height="660"></canvas>
+  <div class="controls">
+    <label>TILE_WIDTH: <span id="twVal" class="val">88</span><input type="range" id="tw" min="60" max="150" value="88"></label>
+    <label>TILE_HEIGHT: <span id="thVal" class="val">55</span><input type="range" id="th" min="40" max="100" value="55"></label>
+    <label>OFFSET_X: <span id="oxVal" class="val">0</span><input type="range" id="ox" min="-30" max="30" value="0"></label>
+    <label>OFFSET_Y: <span id="oyVal" class="val">0</span><input type="range" id="oy" min="-30" max="30" value="0"></label>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="color-dot" style="background:#e63946"></div> Tim 1 (Utara / Merah)</div>
+    <div class="legend-item"><div class="color-dot" style="background:#facc15"></div> Tim 2 (Timur / Kuning)</div>
+    <div class="legend-item"><div class="color-dot" style="background:#0077b6"></div> Tim 3 (Selatan / Biru)</div>
+    <div class="legend-item"><div class="color-dot" style="background:#2a9d8f"></div> Tim 4 (Barat / Hijau)</div>
+  </div>
+
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    const tileImages = {};
+    const names = [
+      'tile-normal', 'tile-special', 'tile-weird', 'tile-truth', 'tile-dare',
+      'tile-entrance-red', 'tile-entrance-blue', 'tile-entrance-green', 'tile-entrance-yellow',
+      'tile-ended-red', 'tile-ended-blue', 'tile-ended-green', 'tile-ended-yellow'
+    ];
+    let loaded = 0;
+
+    names.forEach(k => {
+      const img = new Image();
+      img.onload = () => {
+        tileImages[k] = img;
+        loaded++;
+        if (loaded === names.length) draw();
+      };
+      img.src = '../assets/tiles/' + k + '.png';
+    });
+
+    // 44 outer track tiles
+    const rawTrack = [
+      { gx: -1, gy: -2, type: 'start', teamStart: 0 },
+      { gx: -1, gy: -3, type: 'blank' },
+      { gx: -1, gy: -4, type: 'truth' },
+      { gx: -1, gy: -5, type: 'dare' },
+      { gx: -1, gy: -6, type: 'blank' },
+      { gx: 0, gy: -6, type: 'blank' },
+      { gx: 1, gy: -6, type: 'blank' },
+      { gx: 1, gy: -5, type: 'special_dice' },
+      { gx: 1, gy: -4, type: 'blank' },
+      { gx: 1, gy: -3, type: 'weird_dice' },
+      { gx: 1, gy: -2, type: 'blank' },
+      { gx: 2, gy: -1, type: 'start', teamStart: 1 },
+      { gx: 3, gy: -1, type: 'blank' },
+      { gx: 4, gy: -1, type: 'truth' },
+      { gx: 5, gy: -1, type: 'dare' },
+      { gx: 6, gy: -1, type: 'blank' },
+      { gx: 6, gy: 0, type: 'blank' },
+      { gx: 6, gy: 1, type: 'blank' },
+      { gx: 5, gy: 1, type: 'special_dice' },
+      { gx: 4, gy: 1, type: 'blank' },
+      { gx: 3, gy: 1, type: 'weird_dice' },
+      { gx: 2, gy: 1, type: 'blank' },
+      { gx: 1, gy: 2, type: 'start', teamStart: 2 },
+      { gx: 1, gy: 3, type: 'blank' },
+      { gx: 1, gy: 4, type: 'truth' },
+      { gx: 1, gy: 5, type: 'dare' },
+      { gx: 1, gy: 6, type: 'blank' },
+      { gx: 0, gy: 6, type: 'blank' },
+      { gx: -1, gy: 6, type: 'blank' },
+      { gx: -1, gy: 5, type: 'special_dice' },
+      { gx: -1, gy: 4, type: 'blank' },
+      { gx: -1, gy: 3, type: 'weird_dice' },
+      { gx: -1, gy: 2, type: 'blank' },
+      { gx: -2, gy: 1, type: 'start', teamStart: 3 },
+      { gx: -3, gy: 1, type: 'blank' },
+      { gx: -4, gy: 1, type: 'truth' },
+      { gx: -5, gy: 1, type: 'dare' },
+      { gx: -6, gy: 1, type: 'blank' },
+      { gx: -6, gy: 0, type: 'blank' },
+      { gx: -6, gy: -1, type: 'blank' },
+      { gx: -5, gy: -1, type: 'special_dice' },
+      { gx: -4, gy: -1, type: 'blank' },
+      { gx: -3, gy: -1, type: 'weird_dice' },
+      { gx: -2, gy: -1, type: 'blank' }
+    ];
+
+    // Finish lanes (5 tiles per team)
+    const finishLanes = [
+      // Tim 0 (North / Red)
+      [ { gx: 0, gy: -5, gz: 0.25, team: 0 }, { gx: 0, gy: -4, gz: 0.50, team: 0 }, { gx: 0, gy: -3, gz: 0.75, team: 0 }, { gx: 0, gy: -2, gz: 1.0, team: 0 }, { gx: 0, gy: -1, gz: 1.25, team: 0 } ],
+      // Tim 1 (East / Yellow)
+      [ { gx: 5, gy: 0, gz: 0.25, team: 1 }, { gx: 4, gy: 0, gz: 0.50, team: 1 }, { gx: 3, gy: 0, gz: 0.75, team: 1 }, { gx: 2, gy: 0, gz: 1.0, team: 1 }, { gx: 1, gy: 0, gz: 1.25, team: 1 } ],
+      // Tim 2 (South / Blue)
+      [ { gx: 0, gy: 5, gz: 0.25, team: 2 }, { gx: 0, gy: 4, gz: 0.50, team: 2 }, { gx: 0, gy: 3, gz: 0.75, team: 2 }, { gx: 0, gy: 2, gz: 1.0, team: 2 }, { gx: 0, gy: 1, gz: 1.25, team: 2 } ],
+      // Tim 3 (West / Green)
+      [ { gx: -5, gy: 0, gz: 0.25, team: 3 }, { gx: -4, gy: 0, gz: 0.50, team: 3 }, { gx: -3, gy: 0, gz: 0.75, team: 3 }, { gx: -2, gy: 0, gz: 1.0, team: 3 }, { gx: -1, gy: 0, gz: 1.25, team: 3 } ]
+    ];
+
+    const TEAM_COLORS = ['red', 'yellow', 'blue', 'green'];
+
+    const tileW = 76;
+    const tileH = 38;
+    const tileZ = 24;
+
+    function iso(gx, gy, gz = 0) {
+      const cx = cv.width / 2;
+      const cy = cv.height / 2;
+      const sx = (gx - gy) * (tileW / 2) + cx;
+      const sy = (gx + gy) * (tileH / 2) - (gz * tileZ) + cy;
+      return { sx, sy };
+    }
+
+    function draw() {
+      const TW = parseInt(document.getElementById('tw').value);
+      const TH = parseInt(document.getElementById('th').value);
+      const OX = parseInt(document.getElementById('ox').value);
+      const OY = parseInt(document.getElementById('oy').value);
+
+      document.getElementById('twVal').textContent = TW;
+      document.getElementById('thVal').textContent = TH;
+      document.getElementById('oxVal').textContent = OX;
+      document.getElementById('oyVal').textContent = OY;
+
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      // Collect all tiles for Z-indexing
+      const allTiles = [];
+
+      // Outer track
+      rawTrack.forEach((t, i) => {
+        const { sx, sy } = iso(t.gx, t.gy, 0);
+        let key = 'tile-normal';
+        if (t.type === 'start') {
+          key = `tile-entrance-${TEAM_COLORS[t.teamStart]}`;
+        } else if (t.type === 'truth') key = 'tile-truth';
+        else if (t.type === 'dare') key = 'tile-dare';
+        else if (t.type === 'special_dice') key = 'tile-special';
+        else if (t.type === 'weird_dice') key = 'tile-weird';
+
+        allTiles.push({ sx, sy, depth: sy, key, index: i + 1 });
+      });
+
+      // Finish lanes
+      finishLanes.forEach((lane, tIdx) => {
+        lane.forEach(tile => {
+          const { sx, sy } = iso(tile.gx, tile.gy, tile.gz);
+          const key = `tile-ended-${TEAM_COLORS[tIdx]}`;
+          allTiles.push({ sx, sy, depth: sy + tile.gz * 0.1, key });
+        });
+      });
+
+      // 4. URUTAN RENDER (Z-INDEXING) BERDASARKAN SUMBU Y
+      allTiles.sort((a, b) => a.depth - b.depth);
+
+      allTiles.forEach(tile => {
+        const img = tileImages[tile.key] || tileImages['tile-normal'];
+        const drawX = Math.round(tile.sx - TW / 2 + OX);
+        const drawY = Math.round(tile.sy - TH / 2 + OY);
+
+        ctx.drawImage(img, drawX, drawY, TW, TH);
+      });
+    }
+
+    ['tw', 'th', 'ox', 'oy'].forEach(id => {
+      document.getElementById(id).oninput = draw;
+    });
+  </script>
+</body>
+</html>

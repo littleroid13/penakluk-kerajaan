@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Preview & Test 3D Miniature Pawns - Penakhlukan Kerajaan</title>
+  <style>
+    body {
+      background: #0b132b;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 15px;
+    }
+    h2 { margin: 5px 0 10px; color: #ffd700; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      padding: 10px 20px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      max-width: 1100px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    label { font-size: 13px; display: flex; align-items: center; gap: 8px; color: #e2e8f0; }
+    input[type="range"] { cursor: pointer; accent-color: #ffd700; width: 100px; }
+    select, button {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid #475569;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button:hover { background: #334155; border-color: #ffd700; }
+    button.btn-primary { background: #f59e0b; color: #000; font-weight: bold; border-color: #d97706; }
+    button.btn-primary:hover { background: #d97706; }
+    .val { color: #facc15; font-weight: bold; min-width: 32px; display: inline-block; }
+    canvas {
+      background: #0f172a;
+      border: 2px solid #3b82f6;
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+    }
+    .status-bar {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #94a3b8;
+      display: flex;
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>⚔️ 3D Miniature Pawns: Preview, Animasi & Stacking</h2>
+
+  <div class="toolbar">
+    <label>Pawn Scale: <input type="range" id="pScale" min="0.20" max="0.55" step="0.01" value="0.35"><span id="pScaleVal" class="val">0.35</span></label>
+    <label>Anchor Y: <input type="range" id="anchorY" min="0.60" max="0.95" step="0.005" value="0.745"><span id="anchorYVal" class="val">0.745</span></label>
+    <label>Offset Y: <input type="range" id="offY" min="-30" max="30" step="1" value="0"><span id="offYVal" class="val">0</span></label>
+    <label>Idle Bob: <input type="range" id="idleAmp" min="0" max="6" step="0.5" value="2.5"><span id="idleAmpVal" class="val">2.5</span></label>
+
+    <label>Faksi Tim:
+      <select id="factionSelect">
+        <option value="dragon">House of Dragon</option>
+        <option value="citadel">Iron Citadel</option>
+        <option value="elf" selected>Woodland Elves</option>
+        <option value="crown">Golden Crown</option>
+        <option value="wolf">Northern Wolves</option>
+        <option value="arcane">Arcane Order</option>
+      </select>
+    </label>
+
+    <button id="btnHop" class="btn-primary">▶ Uji Lompat (Hop Animation)</button>
+    <button id="btnStack">Ubah Jumlah Tumpukan Pion (1 - 4)</button>
+    <button id="btnToggleTurn">Ganti Giliran Tim Aktif</button>
+  </div>
+
+  <canvas id="cv" width="1100" height="650"></canvas>
+
+  <div class="status-bar">
+    <span id="stackStatus">Tumpukan: 1 Pion per petak</span>
+    <span id="turnStatus">Tim Aktif: Tim 1 (Hijau - Elves)</span>
+    <span>FPS: <strong id="fpsVal">60</strong></span>
+  </div>
+
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+
+    // UI Bindings
+    const pScaleInput = document.getElementById('pScale');
+    const pScaleVal = document.getElementById('pScaleVal');
+    const anchorYInput = document.getElementById('anchorY');
+    const anchorYVal = document.getElementById('anchorYVal');
+    const offYInput = document.getElementById('offY');
+    const offYVal = document.getElementById('offYVal');
+    const idleAmpInput = document.getElementById('idleAmp');
+    const idleAmpVal = document.getElementById('idleAmpVal');
+    const factionSelect = document.getElementById('factionSelect');
+    const btnHop = document.getElementById('btnHop');
+    const btnStack = document.getElementById('btnStack');
+    const btnToggleTurn = document.getElementById('btnToggleTurn');
+    const stackStatus = document.getElementById('stackStatus');
+    const turnStatus = document.getElementById('turnStatus');
+
+    pScaleInput.oninput = () => pScaleVal.textContent = pScaleInput.value;
+    anchorYInput.oninput = () => anchorYVal.textContent = anchorYInput.value;
+    offYInput.oninput = () => offYVal.textContent = offYInput.value;
+    idleAmpInput.oninput = () => idleAmpVal.textContent = idleAmpInput.value;
+
+    const FACTIONS = ['dragon', 'citadel', 'elf', 'crown', 'wolf', 'arcane'];
+    const COLORS = ['green', 'red', 'yellow', 'blue'];
+    const loadedImages = {};
+
+    // Preload all 24 pawn images + base + tile images
+    let assetsLoaded = 0;
+    const totalAssets = 24 + 4 + 5;
+
+    function preloadAll() {
+      // 1. Pawns
+      FACTIONS.forEach(f => {
+        COLORS.forEach(c => {
+          const key = `pawn-${f}-${c}`;
+          const img = new Image();
+          img.src = `../assets/pawns/${key}.png`;
+          img.onload = () => { loadedImages[key] = img; checkDone(); };
+          img.onerror = () => {
+            // fallback singular path
+            const img2 = new Image();
+            img2.src = `../assets/pawn/${key}.png`;
+            img2.onload = () => { loadedImages[key] = img2; checkDone(); };
+          };
+        });
+      });
+
+      // 2. Bases (sample)
+      COLORS.forEach(c => {
+        const key = `base-dragon-${c}`;
+        const img = new Image();
+        img.src = `../assets/base/${key}.png`;
+        img.onload = () => { loadedImages[key] = img; checkDone(); };
+      });
+
+      // 3. Tiles
+      ['tile-normal', 'tile-special', 'tile-weird', 'tile-truth', 'tile-dare'].forEach(t => {
+        const img = new Image();
+        img.src = `../assets/tiles/${t}.png`;
+        img.onload = () => { loadedImages[t] = img; checkDone(); };
+      });
+    }
+
+    function checkDone() {
+      assetsLoaded++;
+    }
+    preloadAll();
+
+    // Isometric projection helpers
+    const originX = 550;
+    const originY = 320;
+    const tileW = 88;
+    const tileH = 44;
+    const tileZ = 20;
+
+    function iso(gx, gy, gz = 0) {
+      return {
+        sx: originX + (gx - gy) * (tileW / 2),
+        sy: originY + (gx + gy) * (tileH / 2) - (gz * tileZ)
+      };
+    }
+
+    // Interactive State
+    let activeTeam = 0; // 0: Green, 1: Red, 2: Yellow, 3: Blue
+    let stackCount = 1;
+
+    // Simulation Pawns
+    // Track tiles on screen
+    const trackTiles = [
+      { gx: -2, gy: 0, gz: 0, type: 'tile-normal' },
+      { gx: -1, gy: 0, gz: 0, type: 'tile-truth' },
+      { gx: 0, gy: 0, gz: 0, type: 'tile-special' },
+      { gx: 1, gy: 0, gz: 0, type: 'tile-dare' },
+      { gx: 2, gy: 0, gz: 0, type: 'tile-weird' }
+    ];
+
+    // Base platforms
+    const baseCamps = [
+      { team: 0, color: 'green', centerGx: -4.4, centerGy: -4.4, gz: 0.4 },
+      { team: 1, color: 'red', centerGx: 4.3, centerGy: -4.3, gz: 0.4 },
+      { team: 2, color: 'yellow', centerGx: 4.4, centerGy: 4.4, gz: 0.4 },
+      { team: 3, color: 'blue', centerGx: -4.3, centerGy: 4.3, gz: 0.4 }
+    ];
+
+    // Create Pawns: 4 pawns per team in base, plus test pawns on track
+    const pawns = [];
+    baseCamps.forEach(bc => {
+      const spread = 0.7;
+      const slots = [
+        { gx: bc.centerGx - spread * 0.7, gy: bc.centerGy - spread * 0.7 },
+        { gx: bc.centerGx + spread * 0.7, gy: bc.centerGy - spread * 0.7 },
+        { gx: bc.centerGx - spread * 0.7, gy: bc.centerGy + spread * 0.7 },
+        { gx: bc.centerGx + spread * 0.7, gy: bc.centerGy + spread * 0.7 }
+      ];
+      slots.forEach((s, idx) => {
+        pawns.push({
+          id: `pawn_${bc.team}_${idx+1}`,
+          team: bc.team,
+          color: bc.color,
+          num: idx + 1,
+          state: 'base',
+          gx: s.gx,
+          gy: s.gy,
+          gz: 0.55,
+          renderGx: s.gx,
+          renderGy: s.gy,
+          renderGz: 0.55,
+          jumpY: 0,
+          scaleX: 1.0,
+          scaleY: 1.0,
+          isMoving: false,
+          stackOffsetX: 0,
+          stackOffsetY: 0
+        });
+      });
+    });
+
+    // Test pawn on track center
+    const trackPawn = {
+      id: 'pawn_track_1',
+      team: 0,
+      color: 'green',
+      num: 1,
+      state: 'track',
+      gx: -2,
+      gy: 0,
+      gz: 0,
+      renderGx: -2,
+      renderGy: 0,
+      renderGz: 0,
+      jumpY: 0,
+      scaleX: 1.0,
+      scaleY: 1.0,
+      isMoving: false,
+      stackOffsetX: 0,
+      stackOffsetY: 0
+    };
+    pawns.push(trackPawn);
+
+    // Stacking extra pawns on track center (gx: 0, gy: 0)
+    const extraPawns = [
+      { id: 'pawn_extra_1', team: 1, color: 'red', num: 2, state: 'track', gx: 0, gy: 0, gz: 0, renderGx: 0, renderGy: 0, renderGz: 0, jumpY: 0, scaleX: 1, scaleY: 1, isMoving: false },
+      { id: 'pawn_extra_2', team: 2, color: 'yellow', num: 3, state: 'track', gx: 0, gy: 0, gz: 0, renderGx: 0, renderGy: 0, renderGz: 0, jumpY: 0, scaleX: 1, scaleY: 1, isMoving: false },
+      { id: 'pawn_extra_3', team: 3, color: 'blue', num: 4, state: 'track', gx: 0, gy: 0, gz: 0, renderGx: 0, renderGy: 0, renderGz: 0, jumpY: 0, scaleX: 1, scaleY: 1, isMoving: false }
+    ];
+
+    btnStack.onclick = () => {
+      stackCount = (stackCount % 4) + 1;
+      stackStatus.textContent = `Tumpukan di Petak Tengah: ${stackCount} Pion`;
+    };
+
+    btnToggleTurn.onclick = () => {
+      activeTeam = (activeTeam + 1) % 4;
+      const teamNames = ['Tim 1 (Hijau)', 'Tim 2 (Merah)', 'Tim 3 (Kuning)', 'Tim 4 (Biru)'];
+      turnStatus.textContent = `Tim Aktif: ${teamNames[activeTeam]}`;
+    };
+
+    // Hop animation test
+    let isHopping = false;
+    btnHop.onclick = async () => {
+      if (isHopping) return;
+      isHopping = true;
+      btnHop.disabled = true;
+
+      // Hop sequence: from -2 to +2
+      const path = [
+        { gx: -1, gy: 0, gz: 0 },
+        { gx: 0, gy: 0, gz: 0 },
+        { gx: 1, gy: 0, gz: 0 },
+        { gx: 2, gy: 0, gz: 0 },
+        { gx: 1, gy: 0, gz: 0 },
+        { gx: 0, gy: 0, gz: 0 },
+        { gx: -1, gy: 0, gz: 0 },
+        { gx: -2, gy: 0, gz: 0 }
+      ];
+
+      for (const node of path) {
+        await animHop(trackPawn, node);
+      }
+      isHopping = false;
+      btnHop.disabled = false;
+    };
+
+    function animHop(pawn, target) {
+      return new Promise(resolve => {
+        const startGx = pawn.renderGx;
+        const startGy = pawn.renderGy;
+        const startGz = pawn.renderGz;
+        const duration = 220; // ms airborne
+        const startTime = performance.now();
+        const maxHeight = 32;
+
+        pawn.isMoving = true;
+
+        function step(now) {
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / duration);
+
+          pawn.renderGx = startGx + (target.gx - startGx) * progress;
+          pawn.renderGy = startGy + (target.gy - startGy) * progress;
+          pawn.renderGz = startGz + (target.gz - startGz) * progress;
+
+          // Parabolic jump arc with stretch at peak
+          const jumpFactor = Math.sin(progress * Math.PI);
+          pawn.jumpY = jumpFactor * maxHeight;
+          pawn.scaleY = 1.0 + 0.15 * jumpFactor;
+          pawn.scaleX = 1.0 - 0.10 * jumpFactor;
+
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else {
+            pawn.renderGx = target.gx;
+            pawn.renderGy = target.gy;
+            pawn.renderGz = target.gz;
+            pawn.jumpY = 0;
+
+            // Landing squash (100ms)
+            const landStart = performance.now();
+            const landDuration = 100;
+            function stepLand(landNow) {
+              const landElapsed = landNow - landStart;
+              const landProgress = Math.min(1, landElapsed / landDuration);
+
+              // Bounce from squash (0.85/1.15) back to normal 1.0
+              const bounce = Math.sin((1 - landProgress) * Math.PI * 0.5);
+              pawn.scaleY = 1.0 - 0.15 * bounce;
+              pawn.scaleX = 1.0 + 0.15 * bounce;
+
+              if (landProgress < 1) {
+                requestAnimationFrame(stepLand);
+              } else {
+                pawn.scaleX = 1.0;
+                pawn.scaleY = 1.0;
+                pawn.isMoving = false;
+                resolve();
+              }
+            }
+            requestAnimationFrame(stepLand);
+          }
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    // Stacking calculation
+    function applyStacking(pawnList) {
+      const groups = {};
+      pawnList.forEach(p => {
+        p.stackOffsetX = 0;
+        p.stackOffsetY = 0;
+        const key = p.state === 'base' ? `${p.team}_${p.gx.toFixed(1)}_${p.gy.toFixed(1)}` : `${p.renderGx.toFixed(1)}_${p.renderGy.toFixed(1)}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(p);
+      });
+
+      Object.values(groups).forEach(pawnsOnTile => {
+        if (pawnsOnTile.length <= 1) return;
+        pawnsOnTile.sort((a, b) => (a.team * 10 + a.num) - (b.team * 10 + b.num));
+        const n = pawnsOnTile.length;
+        if (n === 2) {
+          pawnsOnTile[0].stackOffsetX = -9;
+          pawnsOnTile[0].stackOffsetY = -5;
+          pawnsOnTile[1].stackOffsetX = 9;
+          pawnsOnTile[1].stackOffsetY = 5;
+        } else if (n === 3) {
+          pawnsOnTile[0].stackOffsetX = 0;
+          pawnsOnTile[0].stackOffsetY = -7;
+          pawnsOnTile[1].stackOffsetX = -10;
+          pawnsOnTile[1].stackOffsetY = 4;
+          pawnsOnTile[2].stackOffsetX = 10;
+          pawnsOnTile[2].stackOffsetY = 4;
+        } else if (n >= 4) {
+          const off = [{x:0, y:-9}, {x:-11, y:0}, {x:11, y:0}, {x:0, y:8}];
+          pawnsOnTile.forEach((p, idx) => {
+            p.stackOffsetX = off[idx % 4].x;
+            p.stackOffsetY = off[idx % 4].y;
+          });
+        }
+      });
+    }
+
+    // Render loop
+    let lastTime = performance.now();
+    let frameCount = 0;
+    let fpsTimer = 0;
+
+    function render(now) {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      frameCount++;
+      fpsTimer += dt;
+      if (fpsTimer >= 1.0) {
+        document.getElementById('fpsVal').textContent = frameCount;
+        frameCount = 0;
+        fpsTimer = 0;
+      }
+
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      // Read controls
+      const pScale = parseFloat(pScaleInput.value);
+      const anchorRatioY = parseFloat(anchorYInput.value);
+      const manualOffY = parseFloat(offYInput.value);
+      const idleAmp = parseFloat(idleAmpInput.value);
+      const selectedFaction = factionSelect.value;
+
+      // Active pawns list
+      const activePawns = [...pawns];
+      for (let i = 0; i < stackCount - 1; i++) {
+        activePawns.push(extraPawns[i]);
+      }
+
+      // Calculate stacking
+      applyStacking(activePawns);
+
+      // Collect entities for z-sorting
+      const entities = [];
+
+      // 1. Base camps (Platform base selalu dirender sebelum pion di atasnya)
+      baseCamps.forEach(bc => {
+        const { sx, sy } = iso(bc.centerGx, bc.centerGy, bc.gz);
+        entities.push({
+          type: 'base',
+          depth: (bc.centerGx + bc.centerGy) - 2.5,
+          color: bc.color,
+          sx, sy
+        });
+      });
+
+      // 2. Track tiles
+      trackTiles.forEach(tt => {
+        const { sx, sy } = iso(tt.gx, tt.gy, tt.gz);
+        entities.push({
+          type: 'tile',
+          depth: tt.gx + tt.gy,
+          asset: tt.type,
+          sx, sy
+        });
+      });
+
+      // 3. Pawns
+      activePawns.forEach(p => {
+        const { sx, sy } = iso(p.renderGx, p.renderGy, p.renderGz);
+        const stackDepth = (p.stackOffsetY || 0) * 0.05;
+        entities.push({
+          type: 'pawn',
+          depth: p.renderGx + p.renderGy + p.renderGz * 0.2 + stackDepth + 0.1,
+          pawn: p,
+          sx: sx + p.stackOffsetX,
+          sy: sy + p.stackOffsetY
+        });
+      });
+
+      // Depth sort
+      entities.sort((a, b) => a.depth - b.depth);
+
+      // Draw entities
+      entities.forEach(ent => {
+        if (ent.type === 'base') {
+          const img = loadedImages[`base-dragon-${ent.color}`];
+          if (img) {
+            const bw = 512 * 0.45;
+            const bh = 382 * 0.45;
+            ctx.drawImage(img, ent.sx - (256/512)*bw, ent.sy - (195/382)*bh, bw, bh);
+          }
+        } else if (ent.type === 'tile') {
+          const img = loadedImages[ent.asset] || loadedImages['tile-normal'];
+          if (img) {
+            ctx.drawImage(img, ent.sx - 88/2, ent.sy - 55/2, 88, 55);
+          }
+        } else if (ent.type === 'pawn') {
+          const p = ent.pawn;
+          const isTurn = p.team === activeTeam;
+
+          // Idle Bobbing
+          let idleBob = 0;
+          if (!p.isMoving && p.jumpY === 0) {
+            if (isTurn) {
+              idleBob = Math.sin(now * 0.004 + p.num * 1.5) * idleAmp;
+            } else {
+              idleBob = Math.sin(now * 0.0025 + p.num) * (idleAmp * 0.35);
+            }
+          }
+
+          const currentBaseY = ent.sy - idleBob - p.jumpY;
+
+          // Dynamic Ground Shadow
+          const isAirborne = p.jumpY > 0;
+          let sScaleX = 1.0, sScaleY = 1.0, sAlpha = 0.40;
+          if (isAirborne) {
+            const air = Math.max(0.2, 1.0 - p.jumpY / 45);
+            sScaleX = Math.max(0.35, air);
+            sScaleY = Math.max(0.35, air);
+            sAlpha = 0.15 + 0.25 * air;
+          } else if (p.scaleX > 1.02) {
+            const squashRatio = Math.min(1.0, (p.scaleX - 1.0) / 0.15);
+            sScaleX = 1.0 + 0.22 * squashRatio;
+            sScaleY = 1.0 + 0.15 * squashRatio;
+            sAlpha = 0.40 + 0.25 * squashRatio;
+          } else {
+            const factor = Math.max(0.75, Math.min(1.25, 1.0 - (idleBob / 12)));
+            sScaleX = factor;
+            sScaleY = factor;
+            sAlpha = 0.40 * factor;
+          }
+
+          // Shadow on ground
+          ctx.beginPath();
+          ctx.ellipse(ent.sx, ent.sy, 16 * sScaleX, 8 * sScaleY, 0, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 0, 0, ${sAlpha})`;
+          ctx.fill();
+
+          // Selection ring under active team pawns
+          if (isTurn) {
+            const pulse = Math.sin(now * 0.006) * 3;
+            ctx.beginPath();
+            ctx.ellipse(ent.sx, ent.sy, 18 + pulse, 9 + pulse * 0.5, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+          }
+
+          // Pawn Sprite with squash and stretch
+          const key = `pawn-${selectedFaction}-${p.color}`;
+          const img = loadedImages[key] || loadedImages[`pawn-dragon-${p.color}`];
+
+          if (img) {
+            const bw = 160 * pScale;
+            const bh = 200 * pScale;
+            const anchorX = bw * 0.50;
+            const anchorY = bh * anchorRatioY;
+
+            ctx.save();
+            ctx.translate(ent.sx, currentBaseY + manualOffY);
+            ctx.scale(p.scaleX, p.scaleY);
+            ctx.drawImage(img, -anchorX, -anchorY, bw, bh);
+            ctx.restore();
+          }
+
+          // Pawn number badge
+          const badgeY = currentBaseY - 48 * p.scaleY;
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2.5;
+          ctx.strokeText(`${p.num}`, ent.sx, badgeY);
+          ctx.fillText(`${p.num}`, ent.sx, badgeY);
+        }
+      });
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

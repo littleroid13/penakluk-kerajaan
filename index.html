@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PENAKHLUKAN KERAJAAN - Game Lobby</title>
+
+  <!-- External Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Google Fonts: Lilita One (Brawl Stars / Clash style) & Fredoka -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Lilita+One&display=swap" rel="stylesheet">
+
+  <!-- Medieval Base CSS (for Modals & Dialogs) -->
+  <link rel="stylesheet" href="css/medieval.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
+
+  <!-- KaTeX for Math & Science Formula Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Pre-check License Status to prevent layout jump -->
+  <script>
+    if (localStorage.getItem("ludo_licensed") === "true") {
+      document.documentElement.classList.add("ludo-licensed");
+    }
+  </script>
+  <style>
+    /* Prevent UI flashing based on license state */
+    html.ludo-licensed #gate-screen {
+      display: none !important;
+    }
+    html:not(.ludo-licensed) #lobby-screen {
+      display: none !important;
+    }
+  </style>
+
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            game: ['"Lilita One"', 'cursive', 'sans-serif'],
+            body: ['"Fredoka"', 'sans-serif']
+          },
+          colors: {
+            'game-blue': '#1a3770',
+            'game-darkblue': '#0c1b3d',
+            'game-gold': '#facc15',
+            'game-gold-deep': '#ca8a04',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Typography & Global Effects -->
+  <style data-purpose="typography">
+    .font-game {
+      font-family: 'Lilita One', cursive, sans-serif;
+      letter-spacing: 0.05em;
+    }
+    
+    .font-body {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* 3D Stroke & Shadows for Arcade Clash Titles */
+    .title-stroke {
+      -webkit-text-stroke: 3px #582100;
+      text-shadow: 
+        0 4px 0 #3d1400,
+        0 6px 0 #200b00,
+        0 8px 12px rgba(0, 0, 0, 0.6);
+    }
+
+    .badge-stroke {
+      -webkit-text-stroke: 1.5px #1e293b;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+    }
+  </style>
+
+  <!-- Game Layout & Comic Ray Background -->
+  <style data-purpose="game-background">
+    body {
+      background: radial-gradient(circle at 50% 35%, rgb(82, 183, 136) 0%, rgb(64, 145, 108) 40%, rgb(45, 106, 79) 75%, rgb(27, 67, 50) 100%) fixed;
+      min-height: 100vh;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* Cartoon Sunburst Effect */
+    .sunburst-overlay {
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0.04) 0deg 15deg,
+        transparent 15deg 30deg
+      );
+      pointer-events: none;
+    }
+
+    /* Subtle Diamond Pattern */
+    .diamond-pattern {
+      background-image: 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+        linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+        linear-gradient(315deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%);
+      background-position: 24px 0, 24px 0, 0 0, 0 0;
+      background-size: 48px 48px;
+    }
+  </style>
+
+  <!-- 3D Mobile Game Push Buttons & Card Styles -->
+  <style data-purpose="game-ui-components">
+    /* Chunky 3D Push Button Animation */
+    .btn-3d {
+      transition: all 0.08s ease-in-out;
+    }
+    .btn-3d:active {
+      transform: translateY(4px) !important;
+    }
+
+    /* Main CTA Golden 3D Button */
+    .btn-cta-gold {
+      background: linear-gradient(180deg, #ffea60 0%, #ffc000 48%, #e69500 52%, #ffb100 100%);
+      box-shadow: 
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 -3px 0 rgba(0, 0, 0, 0.25) inset,
+        0 8px 0 #8c4e00,
+        0 14px 25px rgba(0, 0, 0, 0.5);
+    }
+    .btn-cta-gold:hover {
+      filter: brightness(1.06);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 1px 0 rgba(255, 255, 255, 0.8) inset,
+        0 -3px 0 rgba(0, 0, 0, 0.25) inset,
+        0 10px 0 #8c4e00,
+        0 18px 30px rgba(255, 191, 0, 0.35);
+    }
+    .btn-cta-gold:active {
+      transform: translateY(6px);
+      box-shadow: 
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 2px 0 #8c4e00,
+        0 5px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Team Card Container Depth */
+    .team-panel-card {
+      background: linear-gradient(180deg, #24355a 0%, #15203d 100%);
+      border: 3px solid #3d568c;
+      box-shadow: 
+        0 2px 0 rgba(255, 255, 255, 0.15) inset,
+        0 8px 0 #0d162d,
+        0 14px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Faction Choice Tile 3D */
+    .faction-tile {
+      background: linear-gradient(180deg, #2b3e69 0%, #1a2846 100%);
+      border: 2px solid #3d5280;
+      box-shadow: 0 4px 0 #10192e, 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+    }
+    .faction-tile:hover {
+      transform: translateY(-3px) scale(1.03);
+      filter: brightness(1.1);
+    }
+    .faction-tile:active {
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 1px 0 #10192e;
+    }
+
+    /* Selected States (Glows & Custom Borders) for All 6 Factions */
+    .faction-selected-crown {
+      border: 3px solid #fde047 !important;
+      background: linear-gradient(180deg, #614d10 0%, #3a2c04 100%) !important;
+      box-shadow: 0 4px 0 #b45309, 0 0 16px rgba(250, 204, 21, 0.6) !important;
+    }
+
+    .faction-selected-dragon {
+      border: 3px solid #f87171 !important;
+      background: linear-gradient(180deg, #692225 0%, #3e1214 100%) !important;
+      box-shadow: 0 4px 0 #991b1b, 0 0 18px rgba(239, 68, 68, 0.7) !important;
+      animation: pulse-glow 2s infinite alternate;
+    }
+
+    .faction-selected-wolves {
+      border: 3px solid #38bdf8 !important;
+      background: linear-gradient(180deg, #164e63 0%, #082f49 100%) !important;
+      box-shadow: 0 4px 0 #0369a1, 0 0 18px rgba(56, 189, 248, 0.6) !important;
+    }
+
+    .faction-selected-citadel {
+      border: 3px solid #60a5fa !important;
+      background: linear-gradient(180deg, #1e3a8a 0%, #172554 100%) !important;
+      box-shadow: 0 4px 0 #1d4ed8, 0 0 18px rgba(96, 165, 250, 0.6) !important;
+    }
+
+    .faction-selected-elves {
+      border: 3px solid #34d399 !important;
+      background: linear-gradient(180deg, #065f46 0%, #064e3b 100%) !important;
+      box-shadow: 0 4px 0 #047857, 0 0 18px rgba(52, 211, 153, 0.7) !important;
+    }
+
+    .faction-selected-arcane {
+      border: 3px solid #c084fc !important;
+      background: linear-gradient(180deg, #581c87 0%, #3b0764 100%) !important;
+      box-shadow: 0 4px 0 #7e22ce, 0 0 18px rgba(192, 132, 252, 0.7) !important;
+    }
+
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 4px 0 #991b1b, 0 0 10px rgba(239, 68, 68, 0.5); }
+      100% { box-shadow: 0 4px 0 #991b1b, 0 0 22px rgba(248, 113, 113, 0.85); }
+    }
+
+    /* Modal Overrides to guarantee overlay floats on top */
+    .modal-overlay {
+      z-index: 9999 !important;
+    }
+
+    /* Pawn Preview Figurine Image in Lobby */
+    .pawn-preview {
+      height: 80px;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.65));
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .pawn-preview:hover {
+      transform: scale(1.08) translateY(-2px);
+    }
+
+    /* Floating Copyright Footer */
+    #copyright-footer {
+      position: fixed;
+      bottom: 8px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 0.5px;
+      z-index: 9999;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+    }
+  </style>
+</head>
+<body class="font-body text-white min-h-screen flex flex-col justify-between items-center p-3 md:p-6 relative select-none diamond-pattern">
+
+  <!-- ==========================================
+       GATE SCREEN (LAYAR VALIDASI KODE AKSES)
+       ========================================== -->
+  <div id="gate-screen" class="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md select-none transition-opacity duration-300">
+    <div class="gate-card max-w-md w-full bg-slate-900/90 border-2 border-amber-400/80 rounded-2xl p-6 md:p-8 text-center shadow-[0_12px_35px_rgba(0,0,0,0.85)] relative">
+      <div class="gate-icon text-4xl md:text-5xl mb-2 filter drop-shadow">👑</div>
+      <h1 class="gate-title font-game text-2xl md:text-3xl text-amber-300 title-stroke tracking-wider mb-1">PENAKHLUKAN KERAJAAN</h1>
+      <p class="gate-subtitle font-body text-xs md:text-sm text-slate-300 mb-6">Masukkan Kode Lisensi Guru</p>
+
+      <div class="gate-input-group flex flex-col gap-3 mb-4">
+        <input type="text" id="license-input" placeholder="Contoh: XXXXXX" autocomplete="off" spellcheck="false" class="w-full text-center tracking-widest uppercase font-game text-lg bg-slate-950 border-2 border-amber-500/60 focus:border-amber-400 focus:outline-none rounded-xl py-3 px-4 text-amber-200 placeholder:text-slate-600 shadow-inner">
+        <button type="button" id="btn-validate" class="btn-3d btn-cta-gold w-full py-3.5 rounded-xl font-game text-base text-stone-900 font-black cursor-pointer shadow-lg active:scale-95 transition-all">
+          Masuk Arena
+        </button>
+      </div>
+
+      <p id="gate-msg" class="text-xs md:text-sm font-semibold min-h-[22px] transition-all duration-200"></p>
+
+      <div class="gate-lynk-wrap mt-4 pt-4 border-t border-slate-700/60 text-xs text-slate-400">
+        Belum punya kode akses? <a href="https://lynk.id/littleroid13" target="_blank" rel="noopener noreferrer" class="gate-lynk-link text-amber-400 hover:text-amber-300 underline font-semibold transition-colors">Dapatkan lisensi di Lynk.id</a>
+      </div>
+    </div>
+
+    <div class="gate-copyright-bottom absolute bottom-3 text-center w-full text-[11px] text-white/45 pointer-events-none">
+      © 2026 littleroid13. All rights reserved.
+    </div>
+  </div>
+
+  <!-- Floating Controls for Lobby (Fullscreen, Options, Chair Calibration) -->
+  <div class="fixed top-4 right-4 z-50 flex items-center gap-2">
+    <a href="calibrate_chair.html" title="Kalibrasi Kursi Tahta Tengah" class="bg-slate-900/80 hover:bg-amber-600 text-yellow-300 border-2 border-yellow-400/60 hover:border-yellow-300 w-11 h-11 rounded-full shadow-lg backdrop-blur transition-all flex items-center justify-center text-lg active:scale-95 cursor-pointer no-underline">
+      👑
+    </a>
+    <button id="btnLobbyOptions" type="button" title="Pengaturan Suara (Volume BGM & SFX)" class="bg-slate-900/80 hover:bg-amber-600 text-yellow-300 border-2 border-yellow-400/60 hover:border-yellow-300 w-11 h-11 rounded-full shadow-lg backdrop-blur transition-all flex items-center justify-center text-lg active:scale-95 cursor-pointer">
+      ⚙️
+    </button>
+    <button id="btnLobbyFullscreen" type="button" title="Layar Penuh (Fullscreen)" class="bg-slate-900/80 hover:bg-amber-600 text-yellow-300 border-2 border-yellow-400/60 hover:border-yellow-300 w-11 h-11 rounded-full shadow-lg backdrop-blur transition-all flex items-center justify-center text-xl active:scale-95 cursor-pointer">
+      ⛶
+    </button>
+  </div>
+
+  <!-- Radial Sunburst / Poly Background Overlay -->
+  <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none">
+    <svg class="w-full h-full object-cover opacity-35" preserveAspectRatio="none" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="poly-g1" x1="0%" x2="100%" y1="0%" y2="100%">
+          <stop offset="0%" stop-color="#95d5b2"></stop>
+          <stop offset="100%" stop-color="#52b788"></stop>
+        </linearGradient>
+        <linearGradient id="poly-g2" x1="0%" x2="100%" y1="100%" y2="0%">
+          <stop offset="0%" stop-color="#b7e4c7"></stop>
+          <stop offset="100%" stop-color="#74c69d"></stop>
+        </linearGradient>
+        <linearGradient id="poly-g3" x1="0%" x2="100%" y1="0%" y2="100%">
+          <stop offset="0%" stop-color="#d8f3dc"></stop>
+          <stop offset="100%" stop-color="#95d5b2"></stop>
+        </linearGradient>
+      </defs>
+      <polygon fill="#52b788" points="0,0 240,0 120,160"></polygon>
+      <polygon fill="#74c69d" points="240,0 480,0 360,180"></polygon>
+      <polygon fill="#40916c" points="0,0 120,160 0,320"></polygon>
+      <polygon fill="#95d5b2" points="120,160 360,180 240,320"></polygon>
+      <polygon fill="#52b788" points="480,0 720,0 600,170"></polygon>
+      <polygon fill="#74c69d" points="360,180 600,170 480,340"></polygon>
+      <polygon fill="#b7e4c7" points="720,0 960,0 840,190"></polygon>
+      <polygon fill="#95d5b2" points="600,170 840,190 720,360"></polygon>
+      <polygon fill="#52b788" points="960,0 1200,0 1080,180"></polygon>
+      <polygon fill="#74c69d" points="840,190 1080,180 960,350"></polygon>
+      <polygon fill="#40916c" points="1200,0 1440,0 1320,170"></polygon>
+      <polygon fill="#95d5b2" points="1080,180 1320,170 1200,340"></polygon>
+      <polygon fill="#52b788" points="1440,0 1440,320 1320,170"></polygon>
+      <polygon fill="#52b788" points="0,320 240,320 120,480"></polygon>
+      <polygon fill="#74c69d" points="240,320 480,340 360,500"></polygon>
+      <polygon fill="#95d5b2" points="480,340 720,360 600,520"></polygon>
+      <polygon fill="#52b788" points="720,360 960,350 840,510"></polygon>
+      <polygon fill="#b7e4c7" points="960,350 1200,340 1080,500"></polygon>
+      <polygon fill="#74c69d" points="1200,340 1440,320 1320,490"></polygon>
+      <polygon fill="#40916c" points="1440,320 1440,640 1320,490"></polygon>
+      <polygon fill="#95d5b2" points="0,320 120,480 0,640"></polygon>
+      <polygon fill="#40916c" points="120,480 360,500 240,660"></polygon>
+      <polygon fill="#b7e4c7" points="360,500 600,520 480,680"></polygon>
+      <polygon fill="#52b788" points="600,520 840,510 720,670"></polygon>
+      <polygon fill="#95d5b2" points="840,510 1080,500 960,660"></polygon>
+      <polygon fill="#74c69d" points="1080,500 1320,490 1200,650"></polygon>
+      <polygon fill="#40916c" points="1320,490 1440,640 1320,800"></polygon>
+      <polygon fill="#74c69d" points="0,640 240,660 120,820"></polygon>
+      <polygon fill="#52b788" points="240,660 480,680 360,840"></polygon>
+      <polygon fill="#95d5b2" points="480,680 720,670 600,830"></polygon>
+      <polygon fill="#b7e4c7" points="720,670 960,660 840,820"></polygon>
+      <polygon fill="#52b788" points="960,660 1200,650 1080,810"></polygon>
+      <polygon fill="#40916c" points="1200,650 1440,640 1320,800"></polygon>
+      <polygon fill="#2d6a4f" points="0,640 120,820 0,900"></polygon>
+      <polygon fill="#40916c" points="120,820 360,840 240,900 0,900"></polygon>
+      <polygon fill="#52b788" points="360,840 600,830 480,900 240,900"></polygon>
+      <polygon fill="#74c69d" points="600,830 840,820 720,900 480,900"></polygon>
+      <polygon fill="#52b788" points="840,820 1080,810 960,900 720,900"></polygon>
+      <polygon fill="#40916c" points="1080,810 1320,800 1200,900 960,900"></polygon>
+      <polygon fill="#2d6a4f" points="1320,800 1440,640 1440,900 1200,900"></polygon>
+    </svg>
+  </div>
+
+  <!-- Main Game Container (16:9 Tablet & Desktop Game UI Wrapper) -->
+  <div class="relative z-10 w-full max-w-7xl flex flex-col items-center justify-between min-h-full py-2" id="lobby-screen" data-alt-id="lobbyScreen">
+
+    <!-- BEGIN: TopHeader -->
+    <header class="w-full flex flex-col items-center text-center mb-4">
+      <!-- Big Arcade 3D Crown Header -->
+      <div class="flex items-center justify-center gap-3 md:gap-5 mb-2">
+        <!-- Low-Poly Left Crown -->
+        <div class="w-10 h-10 md:w-14 md:h-14 transform -rotate-12 animate-bounce drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] flex items-center justify-center">
+          <svg class="w-full h-full" viewBox="0 0 64 64" fill="none">
+            <polygon points="8,20 18,42 10,48" fill="#fde047"></polygon>
+            <polygon points="56,20 46,42 54,48" fill="#eab308"></polygon>
+            <polygon points="32,10 42,34 32,44 22,34" fill="#fef08a"></polygon>
+            <polygon points="18,42 32,44 22,34 8,20" fill="#facc15"></polygon>
+            <polygon points="46,42 32,44 42,34 56,20" fill="#ca8a04"></polygon>
+            <polygon points="10,48 54,48 50,58 14,58" fill="#854d0e"></polygon>
+            <polygon points="32,46 36,50 32,54 28,50" fill="#ef4444"></polygon>
+            <polygon points="20,48 23,52 20,55 17,52" fill="#38bdf8"></polygon>
+            <polygon points="44,48 47,52 44,55 41,52" fill="#34d399"></polygon>
+          </svg>
+        </div>
+
+        <h1 class="font-game text-4xl sm:text-5xl md:text-6xl tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-amber-300 to-amber-500 title-stroke drop-shadow-[0_8px_0_rgba(0,0,0,0.4)]">
+          PENAKHLUKAN KERAJAAN
+        </h1>
+
+        <!-- Low-Poly Right Crown -->
+        <div class="w-10 h-10 md:w-14 md:h-14 transform rotate-12 animate-bounce drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] flex items-center justify-center" style="animation-delay: 0.15s;">
+          <svg class="w-full h-full" viewBox="0 0 64 64" fill="none">
+            <polygon points="8,20 18,42 10,48" fill="#fde047"></polygon>
+            <polygon points="56,20 46,42 54,48" fill="#eab308"></polygon>
+            <polygon points="32,10 42,34 32,44 22,34" fill="#fef08a"></polygon>
+            <polygon points="18,42 32,44 22,34 8,20" fill="#facc15"></polygon>
+            <polygon points="46,42 32,44 42,34 56,20" fill="#ca8a04"></polygon>
+            <polygon points="10,48 54,48 50,58 14,58" fill="#854d0e"></polygon>
+            <polygon points="32,46 36,50 32,54 28,50" fill="#ef4444"></polygon>
+            <polygon points="20,48 23,52 20,55 17,52" fill="#38bdf8"></polygon>
+            <polygon points="44,48 47,52 44,55 41,52" fill="#34d399"></polygon>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Playful Subtitle Pills / Badges -->
+      <div class="flex flex-wrap items-center justify-center gap-2 md:gap-3 text-xs md:text-sm font-game">
+        <span class="bg-indigo-950/80 border-2 border-indigo-400/50 px-4 py-1.5 rounded-full shadow-[0_3px_0_#0f172a] text-indigo-200 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          ⚔️ Lobby Persiapan
+        </span>
+        <span class="text-amber-300 hidden sm:inline">•</span>
+        <span class="bg-gradient-to-r from-amber-900/90 to-amber-700/90 border-2 border-amber-300 px-4 py-1.5 rounded-full shadow-[0_3px_0_#451a03] text-amber-200 font-bold flex items-center gap-1.5">
+          🏰 Tema Map: <span class="text-amber-300 font-black">Medieval Realm</span>
+        </span>
+        <span class="text-amber-300 hidden sm:inline">•</span>
+        <span class="bg-indigo-950/80 border-2 border-indigo-400/50 px-4 py-1.5 rounded-full shadow-[0_3px_0_#0f172a] text-indigo-200 flex items-center gap-1.5" id="headerPawnBadge">
+          ♟️ <span id="headerPawnText">4 Pion per Tim</span>
+        </span>
+      </div>
+    </header>
+    <!-- END: TopHeader -->
+
+    <!-- BEGIN: TeamSelectionGrid (4 Teams) -->
+    <main class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-5" id="teamsSetupContainer" data-purpose="team-cards-grid"></main>
+    <!-- END: TeamSelectionGrid -->
+
+    <!-- BEGIN: SettingsControlBar -->
+    <section class="w-full bg-slate-900/90 backdrop-blur border-2 border-indigo-900/80 rounded-2xl p-3 md:p-4 mb-5 shadow-[0_6px_0_#070d1e] flex flex-wrap items-center justify-between gap-3" data-purpose="settings-bar">
+      <!-- Dropdown Left: Prajurit per Tim -->
+      <div class="flex items-center gap-2 flex-grow sm:flex-grow-0">
+        <span class="text-xl">♟️</span>
+        <label class="font-game text-xs md:text-sm text-slate-200 whitespace-nowrap" for="pawnCountSelect">Prajurit per Tim:</label>
+        <div class="relative">
+          <select class="bg-gradient-to-b from-slate-800 to-slate-950 text-amber-300 font-game text-xs md:text-sm font-semibold rounded-xl border-2 border-indigo-500/50 py-1.5 pl-3 pr-8 focus:outline-none focus:border-amber-400 shadow-inner cursor-pointer appearance-none" id="pawnCountSelect" name="pawn-select">
+            <option value="1">1 Prajurit (Mode Cepat / Faster Game ~10 Mnt)</option>
+            <option value="2">2 Prajurit (Standar Ringkas ~15 Mnt)</option>
+            <option value="3">3 Prajurit (Strategi ~20 Mnt)</option>
+            <option value="4" selected>4 Prajurit (Ludo Penuh Maksimal)</option>
+          </select>
+          <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-amber-400">▼</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons Right -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3 ml-auto">
+        <!-- Bank Soal Button -->
+        <button class="btn-3d btn-open-question-bank bg-gradient-to-b from-emerald-500 to-emerald-700 hover:brightness-110 active:translate-y-1 text-white font-game text-xs md:text-sm px-3.5 py-2 rounded-xl border-2 border-emerald-300 shadow-[0_4px_0_#064e3b] flex items-center gap-1.5 cursor-pointer" type="button">
+          <span>📚</span>
+          <span>Bank Soal</span>
+        </button>
+        <!-- Tantangan Dare Button -->
+        <button class="btn-3d btn-open-dares bg-gradient-to-b from-purple-600 to-purple-800 hover:brightness-110 active:translate-y-1 text-white font-game text-xs md:text-sm px-3.5 py-2 rounded-xl border-2 border-purple-300 shadow-[0_4px_0_#3b0764] flex items-center gap-1.5 cursor-pointer" id="btnOpenDareManager" type="button">
+          <span>🎭</span>
+          <span>Tantangan Dare</span>
+        </button>
+        <!-- Rules Button -->
+        <button class="btn-3d btn-open-rules bg-gradient-to-b from-amber-600 to-amber-800 hover:brightness-110 active:translate-y-1 text-white font-game text-xs md:text-sm px-3.5 py-2 rounded-xl border-2 border-amber-300 shadow-[0_4px_0_#451a03] flex items-center gap-1.5 cursor-pointer" type="button">
+          <span>📜</span>
+          <span>Aturan Permainan</span>
+        </button>
+        <!-- Sound Button (Logo Volume Sahaja) -->
+        <button class="btn-3d btn-toggle-sound bg-gradient-to-b from-slate-700 to-slate-800 hover:brightness-110 active:translate-y-1 text-white font-game text-sm px-3 py-2 rounded-xl border-2 border-slate-500 shadow-[0_4px_0_#1e293b] flex items-center justify-center cursor-pointer" id="sound-toggle-btn" type="button" title="Suara">
+          <span id="sound-icon" class="text-base">🔊</span>
+        </button>
+      </div>
+    </section>
+    <!-- END: SettingsControlBar -->
+
+    <!-- BEGIN: MainHeroCallToAction -->
+    <footer class="w-full flex justify-center pb-2 pt-1" data-purpose="primary-action-area">
+      <button class="btn-3d btn-cta-gold group relative w-full sm:w-auto px-8 md:px-16 py-3.5 md:py-4 rounded-2xl flex items-center justify-center gap-3 md:gap-4 cursor-pointer transform transition-all duration-150" id="btnStartGame" type="button">
+        <!-- Animated Left Sword -->
+        <span class="text-2xl md:text-4xl filter drop-shadow transform group-hover:-rotate-12 transition-transform duration-200">⚔️</span>
+        <!-- Action Label with 3D Depth -->
+        <span class="font-game text-xl sm:text-2xl md:text-3xl text-stone-900 tracking-wider font-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+          MASUK KE ARENA PENAKLUKAN!
+        </span>
+        <!-- Animated Right Sword -->
+        <span class="text-2xl md:text-4xl filter drop-shadow transform group-hover:rotate-12 transition-transform duration-200">⚔️</span>
+        <!-- High-gloss Top Glass Reflection Effect -->
+        <div class="absolute inset-x-3 top-1 h-2.5 bg-white/40 rounded-t-xl pointer-events-none"></div>
+      </button>
+    </footer>
+    <!-- END: MainHeroCallToAction -->
+
+  </div>
+
+  <!-- ==========================================
+       MODAL: BANK SOAL EDUKASI
+  =========================================== -->
+  <div class="modal-overlay hidden" id="questionBankModal">
+    <div class="modal-parchment-frame wide">
+      <button type="button" class="modal-close-btn">&times;</button>
+      <div class="modal-header-banner">
+        <span class="banner-icon">📚</span>
+        <div>
+          <h2>BANK SOAL EDUKASI KERAJAAN</h2>
+          <span class="badge-matched" id="qbCountBadge">15 Soal Tersedia</span>
+        </div>
+      </div>
+
+      <!-- Navigasi Tab Utama Bank Soal -->
+      <div class="bank-soal-main-tabs">
+        <button class="tab-btn active" id="btn-tab-soal" type="button">Daftar Soal</button>
+        <button class="tab-btn" id="btn-tab-tips" type="button">Tips Soal Matematika</button>
+      </div>
+
+      <!-- Kontainer Soal -->
+      <div id="content-soal">
+        <!-- Tabs -->
+        <div class="qb-tabs">
+        <button type="button" class="qb-tab-btn active" data-tab="list">Daftar Soal</button>
+        <button type="button" class="qb-tab-btn" data-tab="add">Tambah Soal Baru</button>
+        <button type="button" class="qb-tab-btn" data-tab="excel">Import Excel (.xlsx)</button>
+        <button type="button" class="qb-tab-btn" data-tab="json">Import / Export JSON</button>
+      </div>
+
+      <!-- Tab 1: List -->
+      <div id="qbTabList">
+        <div class="qb-list" id="qbQuestionList"></div>
+        <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn-medieval-sec" id="btnResetQuestions" style="color:#c62828;">
+            🔄 Reset ke Soal Bawaan
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Add Question -->
+      <div id="qbTabAdd" class="hidden">
+        <form class="qb-add-form" id="formAddNewQuestion">
+          <label>
+            Tipe Soal:
+            <select id="newQType">
+              <option value="multiple_choice">Pilihan Ganda (Multiple Choice)</option>
+              <option value="true_false">Benar / Salah (True / False)</option>
+              <option value="matching">Menjodohkan (Matching Pairs)</option>
+              <option value="drag_drop">Drag & Drop / Urutkan Kata & Kasta</option>
+              <option value="short_answer">Isian Singkat (Short Answer)</option>
+            </select>
+          </label>
+
+          <label>
+            Kategori Soal:
+            <input type="text" id="newQCategory" value="English" placeholder="Contoh: English, Sejarah, Sains" required>
+          </label>
+
+          <label>
+            Teks Pertanyaan / Instruksi:
+            <textarea id="newQText" rows="2" placeholder="Tuliskan pertanyaan soal..." required></textarea>
+          </label>
+
+          <div id="newQDynamicFields"></div>
+
+          <label>
+            Penjelasan / Kunci Jawaban Lengkap:
+            <input type="text" id="newQExplanation" placeholder="Penjelasan saat siswa menjawab..." required>
+          </label>
+
+          <button type="submit" class="btn-royal-submit" style="margin-top:10px;">
+            ➕ SIMPAN SOAL KE BANK
+          </button>
+        </form>
+      </div>
+
+      <!-- Tab 3: Excel (.xlsx / .xls) Import -->
+      <div id="qbTabExcel" class="hidden">
+        <div style="background: rgba(254, 243, 199, 0.9); border: 2px dashed #d97706; padding: 12px 14px; border-radius: 8px; margin-bottom: 12px;">
+          <h4 style="margin: 0 0 5px 0; color: #92400e; font-size: 0.92rem; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+            <span>⚠️</span> Informasi Penting Import Excel
+          </h4>
+          <p style="font-size: 0.85rem; color: #78350f; margin: 0; line-height: 1.45;">
+            Import soal menggunakan format Excel (.xlsx / .xls) <strong>hanya mendukung jenis soal Pilihan Ganda</strong>. Untuk tipe soal lain (Menjodohkan, Benar/Salah, Drag & Drop), silakan gunakan menu <em>Tambah Soal Baru</em> atau <em>Import JSON</em>.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <button type="button" class="btn-medieval-sec" id="btnDownloadExcelTemplate" style="background:#1d4ed8; color:#fff; display: inline-flex; align-items: center; gap: 8px;">
+              <span>📄</span> Unduh Format Template Excel (.xlsx)
+            </button>
+            <p style="font-size: 0.8rem; color: #555; margin: 4px 0 0 0;">
+              Unduh template resmi kami untuk mengisi soal pilihan ganda dengan format kolom yang benar.
+            </p>
+          </div>
+
+          <div style="border-top: 1px solid #dcd1be; padding-top: 10px;">
+            <label style="font-size: 0.88rem; font-weight: bold; color: #4a2800; display: block; margin-bottom: 6px;">
+              Pilih File Excel (.xlsx / .xls) yang Sudah Diisi:
+            </label>
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="font-size: 0.88rem; color: #333; margin-bottom: 8px;">
+            <div>
+              <button type="button" class="btn-royal-submit" id="btnExecuteExcelImport" style="background:#059669;">
+                📥 IMPOR SOAL DARI EXCEL
+              </button>
+            </div>
+            <div id="excelImportStatus" style="font-size: 0.85rem; font-weight: bold; margin-top: 6px; min-height: 20px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: JSON Import/Export -->
+      <div id="qbTabJSON" class="hidden">
+        <p style="font-size: 0.9rem; margin-bottom: 8px; color: #4a2800; font-weight: 600;">
+          Ekspor seluruh bank soal ke file JSON atau tempelkan (paste) JSON soal baru untuk diimpor:
+        </p>
+        <textarea class="json-textarea" id="jsonImportArea" placeholder="Tempelkan data JSON soal di sini..."></textarea>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button type="button" class="btn-medieval-sec" id="btnImportJSON" style="background:#2a9d8f; color:#fff;">
+            📥 Impor dari JSON
+          </button>
+          <button type="button" class="btn-medieval-sec" id="btnExportJSON" style="background:#1d3557; color:#fff;">
+            📤 Unduh File JSON
+          </button>
+        </div>
+      </div>
+      </div><!-- END: content-soal -->
+
+      <!-- Kontainer Tips -->
+      <div id="content-tips" style="display: none;">
+        <div class="math-tips-container">
+          <h3>Panduan Menulis Rumus Matematika, Fisika & Kimia</h3>
+          <p><strong>ATURAN UTAMA:</strong> Apit setiap rumus dengan tanda dolar (<b>$</b>). Jangan gunakan fitur "Insert Equation" dari Word/Excel. Ketik rumus sebagai teks biasa murni.</p>
+          <ul>
+            <li><b>Rumus Sebaris (Inline):</b> Gunakan satu dolar. Contoh: <code>$x + y = 10$</code></li>
+            <li><b>Rumus Baris Baru (Display):</b> Gunakan dua dolar. Contoh: <code>$$A = \pi r^2$$</code></li>
+          </ul>
+          <h4>Daftar Kode (Cheat Sheet):</h4>
+          <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">
+            <tr><th>Kebutuhan</th><th>Cara Mengetik</th><th>Hasil Tampilan</th></tr>
+            <tr><td>Pecahan</td><td><code>$\frac{1}{2}$</code></td><td>Pecahan atas-bawah</td></tr>
+            <tr><td>Pangkat</td><td><code>$x^2$</code> atau <code>$m^3$</code></td><td>Huruf kecil di atas</td></tr>
+            <tr><td>Subskrip (Kimia)</td><td><code>$H_2O$</code></td><td>Huruf kecil di bawah</td></tr>
+            <tr><td>Akar Kuadrat</td><td><code>$\sqrt{144}$</code></td><td>Simbol akar</td></tr>
+            <tr><td>Kali & Bagi</td><td><code>$\times$</code> dan <code>$\div$</code></td><td>Simbol × dan ÷</td></tr>
+            <tr><td>Derajat</td><td><code>$90^\circ$</code></td><td>Simbol derajat (°)</td></tr>
+          </table>
+          <br>
+          <p><i>💡 <b>Tips:</b> Jika kesulitan, kunjungi situs <b>HostMath.com</b> untuk membuat kode rumus secara otomatis, lalu copy-paste kodenya ke sini.</i></p>
+        </div>
+      </div><!-- END: content-tips -->
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: ATURAN PERMAINAN
+  =========================================== -->
+  <div class="modal-overlay hidden" id="rulesModal">
+    <div class="modal-parchment-frame">
+      <button type="button" class="modal-close-btn">&times;</button>
+      <div class="modal-header-banner">
+        <span class="banner-icon">📜</span>
+        <div>
+          <h2>ATURAN PENAKHLUKAN KERAJAAN</h2>
+          <small>Pedoman Board Game Ludo Abad Pertengahan</small>
+        </div>
+      </div>
+
+      <div style="font-size: 0.92rem; line-height: 1.5; color: #2b1810; display:flex; flex-direction:column; gap:10px;">
+        <p><strong>🎯 Tujuan:</strong> Sebanyak 4 tim bermain dan masing-masing memiliki <strong>4 prajurit (pion)</strong>. Berpacu mengitari 44 petak batu kastil kuno dan membawa seluruh 4 pion masuk ke <strong>Tahta Besi Emas</strong> di pusat peta!</p>
+        <p><strong>🚪 Keluar Base & Pintu Keluar (Dadu 6):</strong> Pion hanya dapat keluar dari markas kastil jika tim mendapatkan <strong>angka dadu 6</strong>. Pion tidak langsung melangkah di lintasan, melainkan <strong>stay di platform Pintu Keluar</strong>. Tim kemudian berhak atas <strong>lemparan dadu kedua (Bonus Roll)</strong>, dan pada lemparan inilah pion mulai melangkah masuk ke jalur arena sesuai angka dadu yang didapatkan!</p>
+        <p><strong>🔄 Putaran 1 Kali Penuh (Lap Mechanic):</strong> Sesuai aturan Ludo otentik, pion harus memutari papan <strong>1 kali putaran penuh (44 petak)</strong>. Titik masuk menuju jalur finish (tangga tahta) berada <strong>tepat sebelum petak keluar base masing-masing</strong>!</p>
+        <p><strong>⚔️ Duel Adu Cepat:</strong> Jika mendarat di petak luar yang sedang ditempati pion musuh, jendela <strong>Duel Tantangan</strong> akan terbuka! Kedua tim berpacu memencet buzzer dan menjawab soal. Pemenang mempertahankan petak dan menendang musuh ke base! Jika keduanya gagal, keduanya mundur ke petak sebelumnya.</p>
+        <p><strong>👑 Kemenangan (Ruler of the Realm):</strong> Setiap pion yang mencapai Tahta memberikan <strong>+200 poin</strong>. Tim pertama yang seluruh pionnya berhasil masuk ke Tahta dinobatkan sebagai <strong>"Ruler of the Realm"</strong> dan berhak atas bonus <strong>+500 poin</strong>!</p>
+        <p><strong>📜 Petak TRUTH (Kitab Kuno):</strong> Menjawab soal edukasi (Pilihan Ganda, Benar/Salah, Menjodohkan, Urutkan, Isian Singkat). Benar = +100 poin & tetap di tempat. Salah = mundur ke petak sebelum lemparan dadu!</p>
+        <p><strong>🎭 Petak DARE (Topeng Istana):</strong> Tantangan kelas seru (Tongue Twister, Pantomim, Pidato Raja, dll.). Guru / Rekan kelas klik: Berhasil = +70 poin!</p>
+        <p><strong>💎 Petak TREASURE (Peti Emas):</strong> Menemukan harta karun kerajaan! Langsung dapat bonus instan +150 poin.</p>
+        <p><strong>🎲 Petak Dadu Emas (Special Dice):</strong> Memutar dadu 3D emas berhadiah 6 kekuatan taktis:
+        <br>• <strong>🍀 Lucky Dice:</strong> Mengocok dadu kembali dengan bebas memilih angka dadu (1-6).
+        <br>• <strong>🛡️ Immunity:</strong> Mendapatkan Shield (kebal 1x dari tendangan, kesalahan soal, mind control, dan swap place).
+        <br>• <strong>⏳ Steal Turn:</strong> Mencuri jatah giliran tim lawan pilihan dan mendapat giliran ekstra.
+        <br>• <strong>🧠 Mind Control:</strong> Memundurkan 1 pion lawan pilihan sebanyak 3 langkah ke belakang.
+        <br>• <strong>🎲 Extra Roll:</strong> Memperoleh 1 kali lagi lemparan dadu segera.
+        <br>• <strong>💰 Steal Point:</strong> Mencuri 50 poin dari salah satu tim lawan yang memiliki poin.
+        </p>
+        <p><strong>🌀 Petak Dadu Misteri (Weird Dice):</strong> Memutar dadu 3D aneh dengan 6 peristiwa tak terduga:
+        <br>• <strong>🍌 Ouch Banana:</strong> Terpeleset kulit pisang dan mundur 2 langkah.
+        <br>• <strong>🪤 Bear Trap:</strong> Terjepit perangkap beruang dan kehilangan 20 poin.
+        <br>• <strong>🔄 Swap Place:</strong> Bertukar tempat dengan pion lawan aktif (kebal pada lawan ber-Shield).
+        <br>• <strong>🎃 Trick or Treat:</strong> Uji pertanyaan dadakan, jika salah mendapat penalti -20 poin.
+        <br>• <strong>⏪ Reverse:</strong> Mengocok dadu lagi dan melangkah mundur sesuai angka dadu.
+        <br>• <strong>🧲 Magnet:</strong> Berpindah ke tile lawan terdekat dan memaksa duel tantangan!
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: KELOLA TANTANGAN (DARE MANAGER)
+  =========================================== -->
+  <div class="modal-overlay hidden" id="dareManagerModal">
+    <div class="modal-parchment-frame" style="max-width: 650px;">
+      <button type="button" class="modal-close-btn" id="closeDareModalBtn">&times;</button>
+      <div class="modal-header-banner">
+        <span class="banner-icon">🎭</span>
+        <div>
+          <h2>KELOLA TANTANGAN KELAS (DARE)</h2>
+          <small>Tambah, edit, sesuaikan bobot poin, dan hapus aktivitas dare interaktif</small>
+        </div>
+      </div>
+
+      <!-- Tabs: List & Add -->
+      <div class="qb-tabs">
+        <button type="button" class="qb-tab-btn active" id="tabDareListBtn" data-tab="dare-list">Daftar Tantangan</button>
+        <button type="button" class="qb-tab-btn" id="tabDareAddBtn" data-tab="dare-add">Tambah Tantangan Baru</button>
+      </div>
+
+      <!-- Tab: Daftar Tantangan -->
+      <div id="dareTabList">
+        <div id="dareListContainer" style="max-height: 330px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 8px;"></div>
+        <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn-medieval-sec" id="btnResetDares" style="color:#c62828;">
+            🔄 Reset ke Tantangan Bawaan
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab: Tambah / Edit Tantangan -->
+      <div id="dareTabAdd" class="hidden">
+        <form id="formDareItem" class="qb-add-form" style="display: flex; flex-direction: column; gap: 10px;">
+          <input type="hidden" id="editDareId" value="">
+          <label>
+            Judul / Nama Tantangan:
+            <input type="text" id="dareTitleInput" placeholder="Contoh: English Tongue Twister, Pidato Raja..." required>
+          </label>
+          <label>
+            Instruksi untuk Siswa:
+            <textarea id="dareInstructionInput" rows="2" placeholder="Jelaskan apa yang harus dilakukan siswa..." required></textarea>
+          </label>
+          <label>
+            Teks Kalimat / Mantra / Tindakan:
+            <textarea id="darePromptInput" rows="2" placeholder="Tuliskan kalimat atau gerakan yang harus diperagakan..." required></textarea>
+          </label>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <label style="flex: 1;">
+              Nilai Hadiah Poin (Points):
+              <input type="number" id="darePointsInput" min="10" max="300" step="10" value="80" required>
+            </label>
+            <label style="flex: 1;">
+              Batas Waktu (Detik):
+              <input type="number" id="dareTimeInput" min="5" max="60" step="5" value="20" required>
+            </label>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 6px;">
+            <button type="submit" class="btn-royal-submit" id="btnSaveDare">
+              💾 SIMPAN TANTANGAN
+            </button>
+            <button type="button" class="btn-medieval-sec" id="btnCancelEditDare" style="display: none;">
+              Batal Edit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL: PENGATURAN OPSI SUARA (AUDIO SETTINGS)
+  =========================================== -->
+  <div class="modal-overlay hidden" id="audioSettingsModal">
+    <div class="modal-parchment-frame" style="max-width: 440px;">
+      <button type="button" class="modal-close-btn" id="closeAudioSettingsBtn">&times;</button>
+      <div class="modal-header-banner">
+        <span class="banner-icon">⚙️</span>
+        <div>
+          <h2>PENGATURAN SUARA</h2>
+          <small>Volume Musik Latar & Efek Suara Permainan</small>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 14px; padding: 4px 6px;">
+        <div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; color: #4a2800; font-size: 0.95rem; margin-bottom: 6px;">
+            <span>🎵 Musik Latar (BGM):</span>
+            <span id="bgmVolumeVal" style="color: #b45309; font-family: monospace;">70%</span>
+          </div>
+          <input type="range" id="bgmVolumeSlider" min="0" max="100" value="70" style="width: 100%; accent-color: #d97706; cursor: pointer;">
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; color: #4a2800; font-size: 0.95rem; margin-bottom: 6px;">
+            <span>🔊 Efek Suara (SFX):</span>
+            <span id="sfxVolumeVal" style="color: #b45309; font-family: monospace;">80%</span>
+          </div>
+          <input type="range" id="sfxVolumeSlider" min="0" max="100" value="80" style="width: 100%; accent-color: #d97706; cursor: pointer;">
+        </div>
+
+        <div style="margin-top: 8px; display: flex; justify-content: center;">
+          <button type="button" class="btn-royal-submit" id="btnCloseAudioSettings" style="min-width: 120px; padding: 8px 22px;">
+            Selesai
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/factions.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/dares.js"></script>
+  <script>
+    // ==========================================
+    // GATE SCREEN (LOGIKA VALIDASI KODE AKSES)
+    // ==========================================
+    const gateScreen = document.getElementById('gate-screen');
+    const lobbyScreen = document.getElementById('lobby-screen') || document.getElementById('lobbyScreen');
+    const licenseInput = document.getElementById('license-input');
+    const btnValidate = document.getElementById('btn-validate');
+    const gateMsg = document.getElementById('gate-msg');
+
+    // 1. Di awal skrip, periksa localStorage.getItem("ludo_licensed")
+    if (localStorage.getItem("ludo_licensed") === "true") {
+      if (gateScreen) gateScreen.style.display = "none";
+      if (lobbyScreen) lobbyScreen.style.display = "";
+    } else {
+      if (gateScreen) gateScreen.style.display = "flex";
+      if (lobbyScreen) lobbyScreen.style.display = "none";
+    }
+
+    if (btnValidate && licenseInput) {
+      // 2. Jika tombol #btn-validate diklik
+      const validateLicenseCode = async () => {
+        const inputCode = licenseInput.value.trim();
+
+        if (!inputCode) {
+          if (gateMsg) {
+            gateMsg.textContent = 'Silakan masukkan kode lisensi terlebih dahulu.';
+            gateMsg.className = 'text-xs md:text-sm font-semibold text-rose-400 min-h-[22px]';
+          }
+          licenseInput.focus();
+          return;
+        }
+
+        // Tampilkan status loading pada tombol
+        const originalBtnText = btnValidate.innerHTML;
+        btnValidate.disabled = true;
+        btnValidate.innerHTML = '<span class="inline-block animate-spin mr-1">⏳</span> Memeriksa...';
+        btnValidate.style.opacity = '0.75';
+        btnValidate.style.cursor = 'wait';
+
+        if (gateMsg) {
+          gateMsg.textContent = 'Menghubungi server lisensi...';
+          gateMsg.className = 'text-xs md:text-sm font-semibold text-amber-300 min-h-[22px]';
+        }
+
+        try {
+          // Lakukan fetch API ke endpoint Google Apps Script
+          const API_URL = "https://script.google.com/macros/s/AKfycbwL2PD-0VGdS02RiyTVTGz6RidWAcebNYEIwZcM00ks-A0FdbNPntzaVLjLAT37qPkL0g/exec?code=" + encodeURIComponent(inputCode);
+          const res = await fetch(API_URL);
+          const data = await res.json();
+
+          // Jika data.valid === true
+          if (data && data.valid === true) {
+            // Simpan token ke browser
+            localStorage.setItem("ludo_licensed", "true");
+            document.documentElement.classList.add("ludo-licensed");
+
+            if (gateMsg) {
+              gateMsg.textContent = '✓ Lisensi Valid! Selamat Datang di Arena...';
+              gateMsg.className = 'text-xs md:text-sm font-semibold text-emerald-400 min-h-[22px]';
+            }
+
+            if (window.soundEngine) {
+              try {
+                window.soundEngine.init();
+                window.soundEngine.playSFX('dice_roll');
+              } catch (e) {}
+            }
+
+            // Tutup #gate-screen dengan transisi fade-out dan tampilkan antarmuka Lobby Ludo
+            if (lobbyScreen) {
+              lobbyScreen.style.display = '';
+              lobbyScreen.style.opacity = '0';
+              lobbyScreen.style.transition = 'opacity 0.4s ease-in';
+              setTimeout(() => { lobbyScreen.style.opacity = '1'; }, 50);
+            }
+
+            if (gateScreen) {
+              gateScreen.style.transition = 'opacity 0.4s ease-out';
+              gateScreen.style.opacity = '0';
+              gateScreen.style.pointerEvents = 'none';
+              setTimeout(() => {
+                gateScreen.style.display = 'none';
+              }, 400);
+            }
+          } else {
+            // Gagal: Munculkan pesan peringatan di #gate-msg
+            const warnText = (data && data.message) ? data.message : 'Kode lisensi tidak valid atau telah kedaluwarsa.';
+            if (gateMsg) {
+              gateMsg.textContent = warnText;
+              gateMsg.className = 'text-xs md:text-sm font-semibold text-rose-400 min-h-[22px]';
+            }
+            licenseInput.focus();
+          }
+        } catch (err) {
+          console.error('License validation error:', err);
+          if (gateMsg) {
+            gateMsg.textContent = 'Gagal memverifikasi kode. Periksa koneksi internet Anda.';
+            gateMsg.className = 'text-xs md:text-sm font-semibold text-rose-400 min-h-[22px]';
+          }
+        } finally {
+          btnValidate.disabled = false;
+          btnValidate.innerHTML = originalBtnText;
+          btnValidate.style.opacity = '';
+          btnValidate.style.cursor = '';
+        }
+      };
+
+      btnValidate.addEventListener('click', validateLicenseCode);
+      licenseInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          validateLicenseCode();
+        }
+      });
+    }
+
+    // Faction SVG Vector Assets from Stitch Redesign
+    const FACTION_SVGS = {
+      dragon: `<svg class="w-8 h-8 drop-shadow" viewBox="0 0 64 64" fill="none">
+        <polygon points="32,6 44,20 32,26 20,20" fill="#f87171"></polygon>
+        <polygon points="20,20 12,38 32,46 32,26" fill="#ef4444"></polygon>
+        <polygon points="44,20 52,38 32,46 32,26" fill="#dc2626"></polygon>
+        <polygon points="14,14 20,20 12,24" fill="#fca5a5"></polygon>
+        <polygon points="50,14 44,20 52,24" fill="#fca5a5"></polygon>
+        <polygon points="32,46 22,58 32,54 42,58" fill="#b91c1c"></polygon>
+        <polygon points="24,28 28,32 24,34" fill="#fef08a"></polygon>
+        <polygon points="40,28 36,32 40,34" fill="#fef08a"></polygon>
+        <circle cx="26" cy="31" r="1.5" fill="#7f1d1d"></circle>
+        <circle cx="38" cy="31" r="1.5" fill="#7f1d1d"></circle>
+      </svg>`,
+      iron: `<svg class="w-8 h-8 drop-shadow" viewBox="0 0 64 64" fill="none">
+        <polygon points="32,6 52,16 32,22 12,16" fill="#93c5fd"></polygon>
+        <polygon points="12,16 32,22 32,56 12,42" fill="#3b82f6"></polygon>
+        <polygon points="52,16 32,22 32,56 52,42" fill="#1d4ed8"></polygon>
+        <polygon points="26,24 38,24 38,36 32,42 26,36" fill="#dbeafe"></polygon>
+        <polygon points="32,10 36,15 32,17 28,15" fill="#ffffff"></polygon>
+      </svg>`,
+      elves: `<svg class="w-8 h-8 drop-shadow" viewBox="0 0 64 64" fill="none">
+        <polygon points="32,6 48,22 32,32 16,22" fill="#6ee7b7"></polygon>
+        <polygon points="16,22 32,32 32,58 14,44" fill="#10b981"></polygon>
+        <polygon points="48,22 32,32 32,58 50,44" fill="#047857"></polygon>
+        <polygon points="32,12 40,24 32,30 24,24" fill="#a7f3d0"></polygon>
+        <polygon points="32,30 38,44 32,52 26,44" fill="#065f46"></polygon>
+      </svg>`,
+      arcane: `<svg class="w-8 h-8 drop-shadow" viewBox="0 0 64 64" fill="none">
+        <polygon points="32,6 48,18 32,26 16,18" fill="#e9d5ff"></polygon>
+        <polygon points="16,18 32,26 24,46 10,34" fill="#a855f7"></polygon>
+        <polygon points="48,18 32,26 40,46 54,34" fill="#7e22ce"></polygon>
+        <polygon points="32,26 24,46 32,58 40,46" fill="#c084fc"></polygon>
+        <polygon points="28,14 36,14 34,22 30,22" fill="#ffffff" opacity="0.7"></polygon>
+      </svg>`,
+      wolves: `<svg class="w-8 h-8 drop-shadow" viewBox="0 0 64 64" fill="none">
+        <polygon points="16,8 26,20 14,26" fill="#7dd3fc"></polygon>
+        <polygon points="48,8 38,20 50,26" fill="#38bdf8"></polygon>
+        <polygon points="26,20 38,20 32,30" fill="#e0f2fe"></polygon>
+        <polygon points="14,26 26,20 32,30 20,44" fill="#0284c7"></polygon>
+        <polygon points="50,26 38,20 32,30 44,44" fill="#0369a1"></polygon>
+        <polygon points="20,44 32,30 44,44 32,56" fill="#bae6fd"></polygon>
+        <polygon points="30,48 34,48 32,52" fill="#0c4a6e"></polygon>
+      </svg>`,
+      crown: `<svg class="w-8 h-8 drop-shadow" viewBox="0 0 64 64" fill="none">
+        <polygon points="10,18 20,38 12,44" fill="#fde047"></polygon>
+        <polygon points="54,18 44,38 52,44" fill="#eab308"></polygon>
+        <polygon points="32,10 40,32 32,40 24,32" fill="#fef08a"></polygon>
+        <polygon points="20,38 32,40 24,32 10,18" fill="#facc15"></polygon>
+        <polygon points="44,38 32,40 40,32 54,18" fill="#ca8a04"></polygon>
+        <polygon points="12,44 52,44 48,54 16,54" fill="#a16207"></polygon>
+        <polygon points="32,42 36,46 32,50 28,46" fill="#ef4444"></polygon>
+        <polygon points="20,44 23,48 20,51 17,48" fill="#38bdf8"></polygon>
+        <polygon points="44,44 47,48 44,51 41,48" fill="#38bdf8"></polygon>
+      </svg>`
+    };
+
+    const FACTION_META = {
+      dragon: {
+        selClass: 'faction-selected-dragon',
+        badgeBg: 'bg-red-500 text-white',
+        nameColor: 'text-red-200 font-bold',
+        previewBorder: 'border-red-500',
+        previewTextColor: 'text-red-400'
+      },
+      iron: {
+        selClass: 'faction-selected-citadel',
+        badgeBg: 'bg-blue-400 text-slate-900',
+        nameColor: 'text-blue-200 font-bold',
+        previewBorder: 'border-blue-400',
+        previewTextColor: 'text-blue-300'
+      },
+      elves: {
+        selClass: 'faction-selected-elves',
+        badgeBg: 'bg-emerald-400 text-slate-900',
+        nameColor: 'text-emerald-200 font-bold',
+        previewBorder: 'border-emerald-400',
+        previewTextColor: 'text-emerald-300'
+      },
+      arcane: {
+        selClass: 'faction-selected-arcane',
+        badgeBg: 'bg-purple-400 text-white',
+        nameColor: 'text-purple-200 font-bold',
+        previewBorder: 'border-purple-400',
+        previewTextColor: 'text-purple-300'
+      },
+      wolves: {
+        selClass: 'faction-selected-wolves',
+        badgeBg: 'bg-sky-400 text-slate-900',
+        nameColor: 'text-sky-200 font-bold',
+        previewBorder: 'border-sky-400',
+        previewTextColor: 'text-sky-300'
+      },
+      crown: {
+        selClass: 'faction-selected-crown',
+        badgeBg: 'bg-yellow-400 text-stone-900',
+        nameColor: 'text-yellow-300 font-bold',
+        previewBorder: 'border-amber-400',
+        previewTextColor: 'text-amber-300'
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('teamsSetupContainer');
+      const defaultFactions = ['wolves', 'elves', 'dragon', 'crown'];
+      const defaultNames = [
+        '1 - Serigala Es',
+        '2 - Hutan Zamrud',
+        '3 - Naga Api',
+        '4 - Mahkota Emas'
+      ];
+
+      // Cek apakah ada config tersimpan sebelumnya
+      let savedFactions = [...defaultFactions];
+      let savedNames = [...defaultNames];
+      let savedPawns = 4;
+
+      try {
+        const stored = localStorage.getItem('penakhlukan_game_config');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.teams && parsed.teams.length === 4) {
+            savedFactions = parsed.teams.map(t => t.factionId);
+            savedNames = parsed.teams.map((t, idx) => {
+              const n = t.name || `${idx + 1}`;
+              return n.replace(/^Tim\s*(\d+)/i, '$1');
+            });
+          }
+          if (parsed.pawnsPerTeam) {
+            savedPawns = parsed.pawnsPerTeam;
+          }
+        }
+      } catch(e) {}
+
+      // Set pawns select value
+      const pawnsSelect = document.getElementById('pawnCountSelect') || document.getElementById('pawn-select');
+      if (pawnsSelect) {
+        pawnsSelect.value = String(savedPawns);
+        const headerPawnText = document.getElementById('headerPawnText');
+        if (headerPawnText) headerPawnText.textContent = `${savedPawns} Pion per Tim`;
+      }
+
+      let selectedFactions = [...savedFactions];
+      const teamIcons = ['🔥', '🛡️', '🏹', '🔮'];
+
+      function renderTeams() {
+        container.innerHTML = '';
+        const currentPawns = pawnsSelect ? parseInt(pawnsSelect.value, 10) : 4;
+
+        for (let t = 0; t < 4; t++) {
+          const card = document.createElement('article');
+          card.className = 'team-panel-card rounded-2xl p-3.5 flex flex-col justify-between relative overflow-hidden';
+          card.dataset.purpose = `team-card-${t + 1}`;
+
+          card.innerHTML = `
+            <!-- Top Team Tag & Header Name -->
+            <div class="flex items-center gap-2 mb-3">
+              <div class="bg-gradient-to-b from-amber-400 to-amber-600 text-white font-game text-base md:text-lg w-8 h-8 rounded-xl border-2 border-amber-200 shadow-[0_2px_0_#78350f] badge-stroke font-black flex items-center justify-center shrink-0">
+                ${t + 1}
+              </div>
+              <input type="text" class="input-team-name bg-slate-900/90 border border-slate-700/80 px-3 py-1 rounded-lg flex-1 font-game text-sm md:text-base text-amber-300 truncate shadow-inner focus:outline-none focus:border-amber-400" id="teamName_${t}" value="${savedNames[t]}" placeholder="${t + 1}" maxlength="20">
+            </div>
+
+            <!-- Faction Selector Heading -->
+            <div class="text-[11px] font-game tracking-wider text-slate-300 uppercase mb-2 px-1 flex items-center justify-between">
+              <span>PILIH FAKSI (<span class="card-pawn-count">${currentPawns}</span> PION):</span>
+              <span class="text-amber-400 text-xs">${teamIcons[t] || '★'}</span>
+            </div>
+
+            <!-- Faction Buttons 2x3 Grid -->
+            <div class="grid grid-cols-3 gap-2 mb-3" id="factionGrid_${t}">
+              ${FACTIONS.map(f => {
+                const isSelected = (f.id === selectedFactions[t]);
+                const meta = FACTION_META[f.id] || FACTION_META.crown;
+                const selClass = meta.selClass;
+                const badgeBg = meta.badgeBg;
+                const nameColor = isSelected ? meta.nameColor : 'text-slate-200';
+                const svgCode = FACTION_SVGS[f.id] || '';
+
+                return `
+                  <button class="faction-tile ${isSelected ? selClass : ''} rounded-xl p-2 flex flex-col items-center justify-center gap-1 text-center relative btn-3d cursor-pointer" 
+                          title="${f.shortName}" 
+                          type="button" 
+                          data-team="${t}" 
+                          data-faction="${f.id}">
+                    ${isSelected ? `<span class="check-badge absolute -top-1.5 -right-1.5 ${badgeBg} text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center border border-white">✓</span>` : ''}
+                    <div class="w-8 h-8 flex items-center justify-center ${isSelected ? 'scale-110' : ''}">
+                      ${svgCode}
+                    </div>
+                    <span class="text-[10px] font-game ${nameColor}">${f.shortName}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Unit Info Box / Quote -->
+            <div class="bg-black/40 border-l-4 rounded-r-xl p-2.5 shadow-inner mt-auto" id="factionPreview_${t}"></div>
+          `;
+
+          container.appendChild(card);
+          updatePreview(t, selectedFactions[t]);
+        }
+
+        // Attach click listeners to all faction tiles
+        container.querySelectorAll('.faction-tile').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const teamIdx = parseInt(btn.dataset.team, 10);
+            const factionId = btn.dataset.faction;
+
+            if (window.soundEngine) window.soundEngine.playClick();
+
+            // Visual bounce
+            btn.style.transform = 'scale(0.92)';
+            setTimeout(() => { btn.style.transform = ''; }, 120);
+
+            // Swap if already chosen by another team
+            const existingOwner = selectedFactions.indexOf(factionId);
+            if (existingOwner !== -1 && existingOwner !== teamIdx) {
+              const oldFaction = selectedFactions[teamIdx];
+              selectedFactions[existingOwner] = oldFaction;
+              updatePreview(existingOwner, oldFaction);
+              refreshButtons(existingOwner);
+            }
+
+            selectedFactions[teamIdx] = factionId;
+            updatePreview(teamIdx, factionId);
+            refreshButtons(teamIdx);
+          });
+        });
+      }
+
+      function refreshButtons(t) {
+        const grid = document.getElementById(`factionGrid_${t}`);
+        if (!grid) return;
+        const curFId = selectedFactions[t];
+
+        grid.querySelectorAll('.faction-tile').forEach(btn => {
+          const fId = btn.dataset.faction;
+          const isSelected = (fId === curFId);
+          const meta = FACTION_META[fId] || FACTION_META.crown;
+
+          // Remove all selected faction classes
+          btn.classList.remove(
+            'faction-selected-dragon',
+            'faction-selected-citadel',
+            'faction-selected-elves',
+            'faction-selected-arcane',
+            'faction-selected-wolves',
+            'faction-selected-crown'
+          );
+
+          // Remove existing check badge
+          const oldBadge = btn.querySelector('.check-badge');
+          if (oldBadge) oldBadge.remove();
+
+          const iconWrap = btn.querySelector('div');
+          const nameSpan = btn.querySelector('span.font-game');
+
+          if (isSelected) {
+            btn.classList.add(meta.selClass);
+            if (iconWrap) iconWrap.classList.add('scale-110');
+            if (nameSpan) {
+              nameSpan.className = `text-[10px] font-game ${meta.nameColor}`;
+            }
+
+            const badge = document.createElement('span');
+            badge.className = `check-badge absolute -top-1.5 -right-1.5 ${meta.badgeBg} text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center border border-white`;
+            badge.textContent = '✓';
+            btn.appendChild(badge);
+          } else {
+            if (iconWrap) iconWrap.classList.remove('scale-110');
+            if (nameSpan) {
+              nameSpan.className = 'text-[10px] font-game text-slate-200';
+            }
+          }
+        });
+      }
+
+      function getPawnAssetSrc(teamIndex, factionId) {
+        const TEAM_COLORS = ['blue', 'green', 'red', 'yellow'];
+        const color = TEAM_COLORS[Math.max(0, Math.min(3, parseInt(teamIndex, 10) || 0))] || 'blue';
+        let faction = 'dragon';
+        const fId = String(factionId || '').toLowerCase();
+        if (fId.includes('dragon')) faction = 'dragon';
+        else if (fId.includes('citadel') || fId.includes('iron') || fId.includes('knight')) faction = 'citadel';
+        else if (fId.includes('elf') || fId.includes('elves')) faction = 'elf';
+        else if (fId.includes('crown')) faction = 'crown';
+        else if (fId.includes('wolf') || fId.includes('wolves')) faction = 'wolf';
+        else if (fId.includes('arcane') || fId.includes('wizard')) faction = 'arcane';
+
+        return `assets/pawns/pawn-${faction}-${color}.png`;
+      }
+
+      function updatePreview(t, fId) {
+        const f = getFactionById(fId);
+        const prev = document.getElementById(`factionPreview_${t}`);
+        if (!prev || !f) return;
+
+        const meta = FACTION_META[fId] || FACTION_META.crown;
+
+        // Reset previous border classes
+        Object.values(FACTION_META).forEach(m => prev.classList.remove(m.previewBorder));
+        prev.classList.add(meta.previewBorder);
+
+        const pawnSrc = getPawnAssetSrc(t, fId);
+
+        prev.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-1">
+            <img class="pawn-preview" src="${pawnSrc}" alt="${f.name}">
+            <p class="text-[11px] italic text-slate-300 mt-1.5 leading-snug text-center">
+              ${f.motto}
+            </p>
+          </div>
+        `;
+      }
+
+      // Initial Render
+      renderTeams();
+
+      // Pawn Select change listener
+      if (pawnsSelect) {
+        pawnsSelect.addEventListener('change', () => {
+          const count = pawnsSelect.value;
+          const headerPawnText = document.getElementById('headerPawnText');
+          if (headerPawnText) headerPawnText.textContent = `${count} Pion per Tim`;
+
+          document.querySelectorAll('.card-pawn-count').forEach(el => {
+            el.textContent = count;
+          });
+
+          for (let t = 0; t < 4; t++) {
+            updatePreview(t, selectedFactions[t]);
+          }
+        });
+      }
+
+      // Start Game CTA -> Simpan Config & Navigasi ke game.html
+      const btnStart = document.getElementById('btnStartGame');
+      if (btnStart) {
+        btnStart.addEventListener('click', () => {
+          if (window.soundEngine) window.soundEngine.playClick();
+
+          const teamConfigs = [];
+          for (let t = 0; t < 4; t++) {
+            const nameInput = document.getElementById(`teamName_${t}`);
+            const rawVal = nameInput ? nameInput.value.trim() : '';
+            const name = rawVal ? rawVal.replace(/^Tim\s*(\d+)/i, '$1') : `${t + 1}`;
+            teamConfigs.push({
+              name: name || `${t + 1}`,
+              factionId: selectedFactions[t]
+            });
+          }
+
+          const currentPawns = pawnsSelect ? parseInt(pawnsSelect.value, 10) : 4;
+
+          const gameConfig = {
+            teams: teamConfigs,
+            pawnsPerTeam: currentPawns
+          };
+
+          localStorage.setItem('penakhlukan_game_config', JSON.stringify(gameConfig));
+          window.location.href = 'game.html';
+        });
+      }
+
+      // Audio Toggle & Visual Sound Feedback (Logo Volume Saja)
+      const soundBtn = document.getElementById('sound-toggle-btn') || document.querySelector('.btn-toggle-sound');
+      const soundIcon = document.getElementById('sound-icon');
+
+      if (soundBtn) {
+        soundBtn.addEventListener('click', () => {
+          const isMuted = window.soundEngine ? window.soundEngine.toggleMute() : false;
+          if (soundIcon) soundIcon.textContent = isMuted ? '🔇' : '🔊';
+          soundBtn.classList.toggle('opacity-75', isMuted);
+        });
+      }
+
+      // Modals & Tools
+      const qbModal = document.getElementById('questionBankModal');
+      const rulesModal = document.getElementById('rulesModal');
+
+      document.querySelectorAll('.btn-open-question-bank').forEach(b => {
+        b.onclick = () => {
+          renderQuestionList();
+          const bsTabSoal = document.getElementById('btn-tab-soal');
+          const bsTabTips = document.getElementById('btn-tab-tips');
+          const cSoal = document.getElementById('content-soal');
+          const cTips = document.getElementById('content-tips');
+          if (bsTabSoal && bsTabTips && cSoal && cTips) {
+            cSoal.style.display = 'block';
+            cTips.style.display = 'none';
+            bsTabSoal.classList.add('active');
+            bsTabTips.classList.remove('active');
+          }
+          qbModal.classList.remove('hidden');
+        };
+      });
+
+      document.querySelectorAll('.btn-open-rules').forEach(b => {
+        b.onclick = () => {
+          rulesModal.classList.remove('hidden');
+        };
+      });
+
+      document.querySelectorAll('.modal-close-btn').forEach(b => {
+        b.onclick = (e) => {
+          const m = e.target.closest('.modal-overlay');
+          if (m) m.classList.add('hidden');
+        };
+      });
+
+      // Close modal on click background
+      [qbModal, rulesModal].forEach(m => {
+        if (!m) return;
+        m.addEventListener('click', (e) => {
+          if (e.target === m) {
+            m.classList.add('hidden');
+          }
+        });
+      });
+
+      // Question Bank Manager in Lobby
+      function renderQuestionList() {
+        const list = document.getElementById('qbQuestionList');
+        const badge = document.getElementById('qbCountBadge');
+        const all = window.questionBank.getAll();
+        if (badge) badge.textContent = `${all.length} Soal Tersedia`;
+        if (!list) return;
+
+        list.innerHTML = all.map((q, idx) => `
+          <div class="qb-question-card">
+            <div class="qb-q-header">
+              <span class="qb-idx">#${idx + 1}</span>
+              <span class="qb-type-tag">${q.type}</span>
+              <span class="qb-cat-tag">${q.category || 'Umum'}</span>
+              <button class="btn-delete-q" data-qid="${q.id}">🗑️ Hapus</button>
+            </div>
+            <div class="qb-q-text">${q.question}</div>
+          </div>
+        `).join('');
+
+        if (typeof renderMathInElement === 'function') {
+          try {
+            renderMathInElement(list, {
+              delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+              ],
+              throwOnError: false
+            });
+          } catch(e) {}
+        }
+
+        list.querySelectorAll('.btn-delete-q').forEach(btn => {
+          btn.onclick = () => {
+            if (confirm('Hapus soal ini?')) {
+              window.questionBank.deleteQuestion(btn.dataset.qid);
+              renderQuestionList();
+            }
+          };
+        });
+      }
+
+      // Main Bank Soal Tab Switcher (Daftar Soal vs Tips Soal Matematika)
+      const btnTabSoal = document.getElementById('btn-tab-soal');
+      const btnTabTips = document.getElementById('btn-tab-tips');
+      const contentSoal = document.getElementById('content-soal');
+      const contentTips = document.getElementById('content-tips');
+
+      if (btnTabSoal && btnTabTips && contentSoal && contentTips) {
+        btnTabTips.addEventListener('click', () => {
+          contentSoal.style.display = 'none';
+          contentTips.style.display = 'block';
+          btnTabTips.classList.add('active');
+          btnTabSoal.classList.remove('active');
+
+          if (typeof renderMathInElement === 'function') {
+            try {
+              renderMathInElement(contentTips, {
+                delimiters: [
+                  { left: '$$', right: '$$', display: true },
+                  { left: '$', right: '$', display: false },
+                  { left: '\\(', right: '\\)', display: false },
+                  { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+              });
+            } catch(e) {}
+          }
+        });
+
+        btnTabSoal.addEventListener('click', () => {
+          contentSoal.style.display = 'block';
+          contentTips.style.display = 'none';
+          btnTabSoal.classList.add('active');
+          btnTabTips.classList.remove('active');
+        });
+      }
+
+      // Sub-Tabs Bank Soal (List, Add, Excel, JSON)
+      document.querySelectorAll('.qb-tab-btn').forEach(tab => {
+        tab.onclick = () => {
+          document.querySelectorAll('.qb-tab-btn').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const target = tab.dataset.tab;
+          document.getElementById('qbTabList').classList.toggle('hidden', target !== 'list');
+          document.getElementById('qbTabAdd').classList.toggle('hidden', target !== 'add');
+          document.getElementById('qbTabExcel').classList.toggle('hidden', target !== 'excel');
+          document.getElementById('qbTabJSON').classList.toggle('hidden', target !== 'json');
+        };
+      });
+
+      // Excel Question Template & Import
+      const btnDownloadTemplate = document.getElementById('btnDownloadExcelTemplate');
+      if (btnDownloadTemplate) {
+        btnDownloadTemplate.onclick = () => {
+          if (typeof XLSX === 'undefined') {
+            alert('Library Excel belum selesai dimuat. Silakan periksa koneksi internet Anda.');
+            return;
+          }
+          const wb = XLSX.utils.book_new();
+          const sampleData = [
+            ['No', 'Kategori', 'Pertanyaan', 'Opsi A', 'Opsi B', 'Opsi C', 'Opsi D', 'Kunci Jawaban (A/B/C/D)', 'Pembahasan'],
+            [1, 'English', 'What is the past tense of "go"?', 'Went', 'Gone', 'Going', 'Goes', 'A', 'Went adalah bentuk lampau (past tense) dari kata kerja go.'],
+            [2, 'Sejarah', 'Siapakah pendiri Kerajaan Majapahit?', 'Raden Wijaya', 'Hayam Wuruk', 'Gajah Mada', 'Kertanegara', 'A', 'Raden Wijaya mendirikan Kerajaan Majapahit pada tahun 1293.'],
+            [3, 'Sains', 'Planet terdekat dengan Matahari dalam Tata Surya adalah...', 'Merkurius', 'Venus', 'Bumi', 'Mars', 'A', 'Merkurius adalah planet terdekat dari Matahari dengan jarak rata-rata 57,9 juta km.']
+          ];
+          const ws = XLSX.utils.aoa_to_sheet(sampleData);
+          ws['!cols'] = [
+            { wch: 6 },
+            { wch: 14 },
+            { wch: 45 },
+            { wch: 20 },
+            { wch: 20 },
+            { wch: 20 },
+            { wch: 20 },
+            { wch: 25 },
+            { wch: 40 }
+          ];
+          XLSX.utils.book_append_sheet(wb, ws, 'Template Soal PG');
+          XLSX.writeFile(wb, 'template_soal_pilihan_ganda.xlsx');
+        };
+      }
+
+      const btnExecExcelImport = document.getElementById('btnExecuteExcelImport');
+      const excelFileInput = document.getElementById('excelFileInput');
+      const excelStatus = document.getElementById('excelImportStatus');
+
+      if (btnExecExcelImport && excelFileInput) {
+        btnExecExcelImport.onclick = () => {
+          const file = excelFileInput.files[0];
+          if (!file) {
+            alert('Silakan pilih file Excel (.xlsx / .xls) terlebih dahulu!');
+            return;
+          }
+          if (typeof XLSX === 'undefined') {
+            alert('Library Excel belum siap.');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, { type: 'array' });
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook.Sheets[firstSheetName];
+              const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+              if (!rows || rows.length <= 1) {
+                alert('File Excel kosong atau tidak memiliki baris data.');
+                return;
+              }
+
+              const header = rows[0].map(h => String(h || '').trim().toLowerCase());
+              const idxCategory = header.findIndex(h => h.includes('kategori'));
+              const idxQuestion = header.findIndex(h => h.includes('pertanyaan') || h.includes('soal'));
+              const idxOptA = header.findIndex(h => h.includes('opsi a') || h === 'a');
+              const idxOptB = header.findIndex(h => h.includes('opsi b') || h === 'b');
+              const idxOptC = header.findIndex(h => h.includes('opsi c') || h === 'c');
+              const idxOptD = header.findIndex(h => h.includes('opsi d') || h === 'd');
+              const idxAnswer = header.findIndex(h => h.includes('kunci') || h.includes('jawaban'));
+              const idxExplanation = header.findIndex(h => h.includes('pembahasan') || h.includes('penjelasan'));
+
+              let count = 0;
+              for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row || row.length === 0) continue;
+
+                const qText = String(row[idxQuestion >= 0 ? idxQuestion : 2] || '').trim();
+                if (!qText) continue;
+
+                const cat = String(row[idxCategory >= 0 ? idxCategory : 1] || 'Umum').trim();
+                const optA = String(row[idxOptA >= 0 ? idxOptA : 3] || '').trim();
+                const optB = String(row[idxOptB >= 0 ? idxOptB : 4] || '').trim();
+                const optC = String(row[idxOptC >= 0 ? idxOptC : 5] || '').trim();
+                const optD = String(row[idxOptD >= 0 ? idxOptD : 6] || '').trim();
+                const options = [optA, optB, optC, optD].filter(o => o.length > 0);
+
+                if (options.length < 2) continue;
+
+                const keyRaw = String(row[idxAnswer >= 0 ? idxAnswer : 7] || 'A').trim().toUpperCase();
+                let correctIndex = 0;
+                if (keyRaw === 'B' || keyRaw === '2') correctIndex = 1;
+                else if (keyRaw === 'C' || keyRaw === '3') correctIndex = 2;
+                else if (keyRaw === 'D' || keyRaw === '4') correctIndex = 3;
+                else {
+                  const match = options.findIndex(o => o.toUpperCase() === keyRaw);
+                  if (match !== -1) correctIndex = match;
+                }
+
+                const explanation = String(row[idxExplanation >= 0 ? idxExplanation : 8] || `Jawaban yang benar adalah: ${options[correctIndex] || 'Opsi A'}`).trim();
+
+                window.questionBank.addQuestion({
+                  type: 'multiple_choice',
+                  category: cat,
+                  question: qText,
+                  options: options,
+                  correctIndex: Math.min(correctIndex, options.length - 1),
+                  explanation: explanation
+                });
+                count++;
+              }
+
+              if (count > 0) {
+                if (excelStatus) excelStatus.innerHTML = `<span style="color:#059669;">✨ Berhasil mengimpor ${count} soal pilihan ganda dari Excel!</span>`;
+                alert(`Berhasil mengimpor ${count} soal pilihan ganda dari Excel!`);
+                excelFileInput.value = '';
+                renderQuestionList();
+              } else {
+                alert('Tidak ada soal yang berhasil diimpor. Pastikan kolom pertanyaan dan opsi jawaban terisi.');
+              }
+            } catch (err) {
+              console.error('Error saat membaca file Excel:', err);
+              alert('Terjadi kesalahan saat membaca file Excel. Pastikan file valid.');
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        };
+      }
+
+      // Dynamic question form fields
+      const typeSelect = document.getElementById('newQType');
+      const dynamicFields = document.getElementById('newQDynamicFields');
+      function updateDynamicFields() {
+        if (!typeSelect || !dynamicFields) return;
+        const type = typeSelect.value;
+        if (type === 'multiple_choice') {
+          dynamicFields.innerHTML = `
+            <label>Pilihan A: <input type="text" id="add_opt_0" required></label>
+            <label>Pilihan B: <input type="text" id="add_opt_1" required></label>
+            <label>Pilihan C: <input type="text" id="add_opt_2" required></label>
+            <label>Pilihan D: <input type="text" id="add_opt_3" required></label>
+            <label>Kunci Jawaban: <select id="add_mc_correct"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></label>
+          `;
+        } else if (type === 'true_false') {
+          dynamicFields.innerHTML = `
+            <label>Pernyataan Kalimat: <input type="text" id="add_tf_statement" required></label>
+            <label>Kunci: <select id="add_tf_correct"><option value="true">Benar (TRUE)</option><option value="false">Salah (FALSE)</option></select></label>
+          `;
+        } else if (type === 'matching') {
+          dynamicFields.innerHTML = `
+            <p><small>3 Pasang kata kiri & kanan:</small></p>
+            <div class="row-pair"><input type="text" id="add_m_l1" placeholder="Kiri 1"> ➡️ <input type="text" id="add_m_r1" placeholder="Kanan 1"></div>
+            <div class="row-pair"><input type="text" id="add_m_l2" placeholder="Kiri 2"> ➡️ <input type="text" id="add_m_r2" placeholder="Kanan 2"></div>
+            <div class="row-pair"><input type="text" id="add_m_l3" placeholder="Kiri 3"> ➡️ <input type="text" id="add_m_r3" placeholder="Kanan 3"></div>
+          `;
+        } else if (type === 'drag_drop') {
+          dynamicFields.innerHTML = `
+            <label>Urutan Elemen Benar (pisahkan koma ','): <input type="text" id="add_dd_items" placeholder="Raja, Bangsawan, Ksatria, Rakyat" required></label>
+          `;
+        } else if (type === 'short_answer') {
+          dynamicFields.innerHTML = `
+            <label>Jawaban Diterima (pisahkan koma ','): <input type="text" id="add_sa_answers" placeholder="istana, benteng, castle" required></label>
+          `;
+        }
+      }
+      if (typeSelect) {
+        typeSelect.onchange = updateDynamicFields;
+        updateDynamicFields();
+      }
+
+      // Submit add question
+      const formAdd = document.getElementById('formAddNewQuestion');
+      if (formAdd) {
+        formAdd.onsubmit = (e) => {
+          e.preventDefault();
+          const type = document.getElementById('newQType').value;
+          const cat = document.getElementById('newQCategory').value;
+          const questionText = document.getElementById('newQText').value;
+          const explanation = document.getElementById('newQExplanation').value;
+
+          let newQ = { type, category: cat, question: questionText, explanation };
+
+          if (type === 'multiple_choice') {
+            newQ.options = [
+              document.getElementById('add_opt_0').value,
+              document.getElementById('add_opt_1').value,
+              document.getElementById('add_opt_2').value,
+              document.getElementById('add_opt_3').value
+            ];
+            newQ.correctIndex = parseInt(document.getElementById('add_mc_correct').value);
+          } else if (type === 'true_false') {
+            newQ.statement = document.getElementById('add_tf_statement').value;
+            newQ.correctAnswer = document.getElementById('add_tf_correct').value === 'true';
+          } else if (type === 'matching') {
+            newQ.pairs = [
+              { id: 'p1', left: document.getElementById('add_m_l1').value, right: document.getElementById('add_m_r1').value },
+              { id: 'p2', left: document.getElementById('add_m_l2').value, right: document.getElementById('add_m_r2').value },
+              { id: 'p3', left: document.getElementById('add_m_l3').value, right: document.getElementById('add_m_r3').value }
+            ];
+          } else if (type === 'drag_drop') {
+            newQ.items = document.getElementById('add_dd_items').value.split(',').map(s=>s.trim()).filter(s=>s.length);
+            newQ.correctOrder = [...newQ.items];
+          } else if (type === 'short_answer') {
+            newQ.acceptedAnswers = document.getElementById('add_sa_answers').value.split(',').map(s=>s.trim()).filter(s=>s.length);
+          }
+
+          window.questionBank.addQuestion(newQ);
+          alert('Soal berhasil ditambahkan!');
+          formAdd.reset();
+          updateDynamicFields();
+          renderQuestionList();
+        };
+      }
+
+      // Export & Import JSON
+      const btnExport = document.getElementById('btnExportJSON');
+      if (btnExport) {
+        btnExport.onclick = () => {
+          const data = window.questionBank.exportJSON();
+          const blob = new Blob([data], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'bank_soal_penakhlukan.json';
+          a.click();
+        };
+      }
+
+      const btnImport = document.getElementById('btnImportJSON');
+      if (btnImport) {
+        btnImport.onclick = () => {
+          const txt = document.getElementById('jsonImportArea').value.trim();
+          if (!txt) { alert('Tempel teks JSON!'); return; }
+          const res = window.questionBank.importJSON(txt);
+          if (res.success) {
+            alert(`Berhasil impor ${res.count} soal!`);
+            document.getElementById('jsonImportArea').value = '';
+            renderQuestionList();
+          } else {
+            alert(`Error: ${res.error}`);
+          }
+        };
+      }
+
+      const btnReset = document.getElementById('btnResetQuestions');
+      if (btnReset) {
+        btnReset.onclick = () => {
+          if (confirm('Reset ke soal bawaan?')) {
+            window.questionBank.resetToDefault();
+            renderQuestionList();
+          }
+        };
+      }
+
+      // ==========================================
+      // DARE CHALLENGE MANAGER MODAL LOGIC
+      // ==========================================
+      const dareModal = document.getElementById('dareManagerModal');
+      const btnOpenDares = document.getElementById('btnOpenDareManager');
+      const closeDareModalBtn = document.getElementById('closeDareModalBtn');
+      const dareListContainer = document.getElementById('dareListContainer');
+      const formDareItem = document.getElementById('formDareItem');
+      const btnResetDares = document.getElementById('btnResetDares');
+      const btnCancelEditDare = document.getElementById('btnCancelEditDare');
+      const tabDareListBtn = document.getElementById('tabDareListBtn');
+      const tabDareAddBtn = document.getElementById('tabDareAddBtn');
+      const dareTabList = document.getElementById('dareTabList');
+      const dareTabAdd = document.getElementById('dareTabAdd');
+
+      function switchDareTab(target) {
+        tabDareListBtn.classList.toggle('active', target === 'dare-list');
+        tabDareAddBtn.classList.toggle('active', target === 'dare-add');
+        dareTabList.classList.toggle('hidden', target !== 'dare-list');
+        dareTabAdd.classList.toggle('hidden', target !== 'dare-add');
+      }
+
+      if (tabDareListBtn && tabDareAddBtn) {
+        tabDareListBtn.onclick = () => switchDareTab('dare-list');
+        tabDareAddBtn.onclick = () => switchDareTab('dare-add');
+      }
+
+      function renderDareList() {
+        if (!dareListContainer || !window.dareManager) return;
+        const allDares = window.dareManager.getAllDares();
+        dareListContainer.innerHTML = allDares.map((d, idx) => `
+          <div class="qb-question-card" style="display: flex; flex-direction: column; gap: 4px;">
+            <div class="qb-q-header">
+              <span class="qb-idx">#${idx + 1}</span>
+              <span class="qb-type-tag" style="background:#7c3aed; color:#fff;">+${d.points || 70} Poin</span>
+              <span class="qb-cat-tag">⏱️ ${d.timeLimit || 20}d</span>
+              <div style="margin-left: auto; display: flex; gap: 6px;">
+                <button type="button" class="btn-edit-dare" data-did="${d.id}" style="background:#0284c7; color:#fff; border:none; padding:2px 8px; border-radius:4px; font-size:11px; cursor:pointer;">✏️ Edit</button>
+                <button type="button" class="btn-delete-dare" data-did="${d.id}" style="background:#dc2626; color:#fff; border:none; padding:2px 8px; border-radius:4px; font-size:11px; cursor:pointer;">🗑️</button>
+              </div>
+            </div>
+            <div style="font-weight: bold; color: #4a2800; font-size: 0.9rem;">${d.title || 'Tantangan Dare'}</div>
+            <div class="qb-q-text" style="font-size: 0.85rem; color: #333;">${d.promptText || d.instruction}</div>
+          </div>
+        `).join('');
+
+        dareListContainer.querySelectorAll('.btn-delete-dare').forEach(btn => {
+          btn.onclick = () => {
+            if (confirm('Hapus tantangan ini?')) {
+              window.dareManager.deleteDare(btn.dataset.did);
+              renderDareList();
+            }
+          };
+        });
+
+        dareListContainer.querySelectorAll('.btn-edit-dare').forEach(btn => {
+          btn.onclick = () => {
+            const dare = window.dareManager.getDareById(btn.dataset.did);
+            if (!dare) return;
+            document.getElementById('editDareId').value = dare.id;
+            document.getElementById('dareTitleInput').value = dare.title || '';
+            document.getElementById('dareInstructionInput').value = dare.instruction || '';
+            document.getElementById('darePromptInput').value = dare.promptText || '';
+            document.getElementById('darePointsInput').value = dare.points || 70;
+            document.getElementById('dareTimeInput').value = dare.timeLimit || 20;
+            if (btnCancelEditDare) btnCancelEditDare.style.display = 'inline-block';
+            switchDareTab('dare-add');
+          };
+        });
+      }
+
+      if (btnOpenDares && dareModal) {
+        btnOpenDares.onclick = () => {
+          if (window.soundEngine) window.soundEngine.playClick();
+          renderDareList();
+          switchDareTab('dare-list');
+          dareModal.classList.remove('hidden');
+        };
+      }
+
+      if (closeDareModalBtn && dareModal) {
+        closeDareModalBtn.onclick = () => {
+          dareModal.classList.add('hidden');
+        };
+      }
+
+      if (formDareItem) {
+        formDareItem.onsubmit = (e) => {
+          e.preventDefault();
+          const editId = document.getElementById('editDareId').value;
+          const title = document.getElementById('dareTitleInput').value.trim();
+          const instruction = document.getElementById('dareInstructionInput').value.trim();
+          const promptText = document.getElementById('darePromptInput').value.trim();
+          const points = parseInt(document.getElementById('darePointsInput').value, 10) || 70;
+          const timeLimit = parseInt(document.getElementById('dareTimeInput').value, 10) || 20;
+
+          if (editId) {
+            window.dareManager.updateDare(editId, {
+              title,
+              instruction,
+              promptText,
+              points,
+              timeLimit
+            });
+            alert('Tantangan berhasil diperbarui!');
+          } else {
+            window.dareManager.addDare({
+              title,
+              instruction,
+              promptText,
+              points,
+              timeLimit,
+              badge: 'Tantangan Guru',
+              type: 'custom'
+            });
+            alert('Tantangan baru berhasil ditambahkan!');
+          }
+
+          formDareItem.reset();
+          document.getElementById('editDareId').value = '';
+          if (btnCancelEditDare) btnCancelEditDare.style.display = 'none';
+          renderDareList();
+          switchDareTab('dare-list');
+        };
+      }
+
+      if (btnCancelEditDare) {
+        btnCancelEditDare.onclick = () => {
+          formDareItem.reset();
+          document.getElementById('editDareId').value = '';
+          btnCancelEditDare.style.display = 'none';
+          switchDareTab('dare-list');
+        };
+      }
+
+      if (btnResetDares) {
+        btnResetDares.onclick = () => {
+          if (confirm('Reset seluruh tantangan Dare ke daftar bawaan?')) {
+            window.dareManager.resetDefault();
+            renderDareList();
+          }
+        };
+      }
+
+      // ==========================================
+      // AUDIO SETTINGS (OPTIONS MODAL) LOGIC
+      // ==========================================
+      const audioSettingsModal = document.getElementById('audioSettingsModal');
+      const btnLobbyOptions = document.getElementById('btnLobbyOptions');
+      const closeAudioSettingsBtn = document.getElementById('closeAudioSettingsBtn');
+      const btnCloseAudioSettings = document.getElementById('btnCloseAudioSettings');
+      const bgmSlider = document.getElementById('bgmVolumeSlider');
+      const sfxSlider = document.getElementById('sfxVolumeSlider');
+      const bgmVal = document.getElementById('bgmVolumeVal');
+      const sfxVal = document.getElementById('sfxVolumeVal');
+
+      const syncAudioSliders = () => {
+        if (window.soundEngine) {
+          const bPct = Math.round((window.soundEngine.bgmVolume !== undefined ? window.soundEngine.bgmVolume : 0.7) * 100);
+          const sPct = Math.round((window.soundEngine.sfxVolume !== undefined ? window.soundEngine.sfxVolume : 0.8) * 100);
+          if (bgmSlider) bgmSlider.value = bPct;
+          if (sfxSlider) sfxSlider.value = sPct;
+          if (bgmVal) bgmVal.textContent = `${bPct}%`;
+          if (sfxVal) sfxVal.textContent = `${sPct}%`;
+        }
+      };
+
+      if (btnLobbyOptions && audioSettingsModal) {
+        btnLobbyOptions.onclick = () => {
+          if (window.soundEngine) window.soundEngine.playClick();
+          syncAudioSliders();
+          audioSettingsModal.classList.remove('hidden');
+        };
+      }
+
+      if (closeAudioSettingsBtn && audioSettingsModal) {
+        closeAudioSettingsBtn.onclick = () => {
+          audioSettingsModal.classList.add('hidden');
+        };
+      }
+
+      if (btnCloseAudioSettings && audioSettingsModal) {
+        btnCloseAudioSettings.onclick = () => {
+          audioSettingsModal.classList.add('hidden');
+        };
+      }
+
+      if (bgmSlider) {
+        bgmSlider.oninput = (e) => {
+          const v = parseInt(e.target.value, 10);
+          if (bgmVal) bgmVal.textContent = `${v}%`;
+          if (window.soundEngine) window.soundEngine.setBGMVolume(v / 100);
+        };
+      }
+
+      if (sfxSlider) {
+        sfxSlider.oninput = (e) => {
+          const v = parseInt(e.target.value, 10);
+          if (sfxVal) sfxVal.textContent = `${v}%`;
+          if (window.soundEngine) window.soundEngine.setSFXVolume(v / 100);
+        };
+      }
+
+      // Start Lobby BGM on first user interaction anywhere
+      const startLobbyBGM = () => {
+        if (localStorage.getItem('ludo_licensed') !== 'true') return;
+        if (window.soundEngine) {
+          window.soundEngine.init();
+          window.soundEngine.playBGM('lobby');
+        }
+        window.removeEventListener('click', startLobbyBGM);
+        window.removeEventListener('keydown', startLobbyBGM);
+      };
+      window.addEventListener('click', startLobbyBGM);
+      window.addEventListener('keydown', startLobbyBGM);
+
+      // Close modals on background click
+      [qbModal, rulesModal, dareModal, audioSettingsModal].forEach(m => {
+        if (!m) return;
+        m.addEventListener('click', (e) => {
+          if (e.target === m) {
+            m.classList.add('hidden');
+          }
+        });
+      });
+
+      // Fullscreen Toggle for Lobby
+      const btnLobbyFs = document.getElementById('btnLobbyFullscreen');
+      if (btnLobbyFs) {
+        const updateFsIcon = () => {
+          const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+          btnLobbyFs.innerHTML = isFs ? '🗗' : '⛶';
+          btnLobbyFs.title = isFs ? 'Keluar Layar Penuh (Exit Fullscreen)' : 'Layar Penuh (Fullscreen)';
+        };
+
+        btnLobbyFs.onclick = () => {
+          if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) docEl.requestFullscreen();
+            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+            else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+            else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+          } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+          }
+        };
+
+        document.addEventListener('fullscreenchange', updateFsIcon);
+        document.addEventListener('webkitfullscreenchange', updateFsIcon);
+        document.addEventListener('mozfullscreenchange', updateFsIcon);
+      }
+    });
+  </script>
+
+  <!-- Floating Copyright Footer -->
+  <div id="copyright-footer">© 2026 littleroid13. All rights reserved.</div>
+</body>
+</html>

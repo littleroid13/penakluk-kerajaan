@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Base Alignment & Spawn Points Preview</title>
+<style>
+  body { background: #0c1b3d; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+  canvas { background: #11285b; border: 2px solid #facc15; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; font-size: 13px; max-width: 1050px; }
+  .control-group { border: 1px solid #3d5280; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .control-group h3 { margin: 0 0 5px 0; color: #facc15; font-size: 14px; }
+  label { display: flex; justify-content: space-between; align-items: center; }
+  input[type=range] { width: 110px; }
+  .val { color: #facc15; font-weight: bold; width: 35px; text-align: right; }
+  select { background: #1a2846; color: #fff; border: 1px solid #3d5280; padding: 4px 8px; border-radius: 4px; }
+  .global-bar { display: flex; gap: 20px; align-items: center; margin-bottom: 10px; background: rgba(0,0,0,0.4); padding: 10px 20px; border-radius: 8px; }
+</style>
+</head>
+<body>
+  <h2>Preview Platform Base 3D & Titik Spawn Pion</h2>
+  <div class="global-bar">
+    <label>Base Scale: <input type="range" id="baseScale" min="0.30" max="0.65" step="0.01" value="0.45"><span id="scaleVal" class="val">0.45</span></label>
+    <label>Pawn Spread: <input type="range" id="pawnSpread" min="0.2" max="1.2" step="0.05" value="0.7"><span id="spreadVal" class="val">0.7</span></label>
+    <label>Base Elevation GZ: <input type="range" id="baseGz" min="0.0" max="0.5" step="0.05" value="0.4"><span id="gzVal" class="val">0.4</span></label>
+  </div>
+  <canvas id="cv" width="1150" height="780"></canvas>
+
+  <div class="controls">
+    <div class="control-group">
+      <h3>Atas (Tim 1 - Hijau)</h3>
+      <label>Offset X: <input type="range" id="topX" min="-100" max="100" value="0"><span id="topXVal" class="val">0</span></label>
+      <label>Offset Y: <input type="range" id="topY" min="-100" max="100" value="0"><span id="topYVal" class="val">0</span></label>
+      <label>Faksi: 
+        <select id="faction0">
+          <option value="dragon">Dragon</option>
+          <option value="citadel">Citadel</option>
+          <option value="elf" selected>Elf</option>
+          <option value="crown">Crown</option>
+          <option value="wolf">Wolf</option>
+          <option value="arcane">Arcane</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="control-group">
+      <h3>Kanan (Tim 2 - Merah)</h3>
+      <label>Offset X: <input type="range" id="rightX" min="-100" max="100" value="0"><span id="rightXVal" class="val">0</span></label>
+      <label>Offset Y: <input type="range" id="rightY" min="-100" max="100" value="0"><span id="rightYVal" class="val">0</span></label>
+      <label>Faksi: 
+        <select id="faction1">
+          <option value="dragon" selected>Dragon</option>
+          <option value="citadel">Citadel</option>
+          <option value="elf">Elf</option>
+          <option value="crown">Crown</option>
+          <option value="wolf">Wolf</option>
+          <option value="arcane">Arcane</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="control-group">
+      <h3>Bawah (Tim 3 - Kuning)</h3>
+      <label>Offset X: <input type="range" id="bottomX" min="-100" max="100" value="0"><span id="bottomXVal" class="val">0</span></label>
+      <label>Offset Y: <input type="range" id="bottomY" min="-100" max="100" value="0"><span id="bottomYVal" class="val">0</span></label>
+      <label>Faksi: 
+        <select id="faction2">
+          <option value="dragon">Dragon</option>
+          <option value="citadel">Citadel</option>
+          <option value="elf">Elf</option>
+          <option value="crown" selected>Crown</option>
+          <option value="wolf">Wolf</option>
+          <option value="arcane">Arcane</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="control-group">
+      <h3>Kiri (Tim 4 - Biru)</h3>
+      <label>Offset X: <input type="range" id="leftX" min="-100" max="100" value="0"><span id="leftXVal" class="val">0</span></label>
+      <label>Offset Y: <input type="range" id="leftY" min="-100" max="100" value="0"><span id="leftYVal" class="val">0</span></label>
+      <label>Faksi: 
+        <select id="faction3">
+          <option value="dragon">Dragon</option>
+          <option value="citadel">Citadel</option>
+          <option value="elf">Elf</option>
+          <option value="crown">Crown</option>
+          <option value="wolf" selected>Wolf</option>
+          <option value="arcane">Arcane</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+
+    const factions = ['dragon', 'citadel', 'elf', 'crown', 'wolf', 'arcane'];
+    const colors = ['green', 'red', 'yellow', 'blue'];
+    const images = {};
+    let totalImages = (factions.length * colors.length * 2) + 5 + 8;
+    let loadedImages = 0;
+
+    function onImgLoad() {
+      loadedImages++;
+      if (loadedImages >= totalImages) {
+        draw();
+      }
+    }
+
+    factions.forEach(f => {
+      colors.forEach(c => {
+        const baseKey = `base-${f}-${c}`;
+        const baseImg = new Image();
+        baseImg.onload = onImgLoad;
+        baseImg.onerror = () => { console.error('Failed to load:', baseKey); onImgLoad(); };
+        baseImg.src = `../assets/base/${baseKey}.png`;
+        images[baseKey] = baseImg;
+
+        const pawnKey = `pawn-${f}-${c}`;
+        const pawnImg = new Image();
+        pawnImg.onload = onImgLoad;
+        pawnImg.onerror = () => {
+          const fallback = new Image();
+          fallback.onload = onImgLoad;
+          fallback.onerror = onImgLoad;
+          fallback.src = `../assets/pawn/${pawnKey}.png`;
+          images[pawnKey] = fallback;
+        };
+        pawnImg.src = `../assets/pawns/${pawnKey}.png`;
+        images[pawnKey] = pawnImg;
+      });
+    });
+
+    ['normal', 'special', 'weird', 'truth', 'dare'].forEach(k => {
+      const img = new Image();
+      img.onload = onImgLoad;
+      img.src = `../assets/tiles/tile-${k}.png`;
+      images[`tile-${k}`] = img;
+    });
+
+    ['red', 'yellow', 'blue', 'green'].forEach(c => {
+      const e = new Image();
+      e.onload = onImgLoad;
+      e.src = `../assets/tiles/tile-entrance-${c}.png`;
+      images[`tile-entrance-${c}`] = e;
+
+      const end = new Image();
+      end.onload = onImgLoad;
+      end.src = `../assets/tiles/tile-ended-${c}.png`;
+      images[`tile-ended-${c}`] = end;
+    });
+
+    const tileW = 76;
+    const tileH = 38;
+    const tileZ = 24;
+
+    function iso(gx, gy, gz = 0) {
+      const cx = cv.width / 2;
+      const cy = cv.height / 2;
+      const sx = (gx - gy) * (tileW / 2) + cx;
+      const sy = (gx + gy) * (tileH / 2) - (gz * tileZ) + cy;
+      return { sx, sy };
+    }
+
+    // 44 Track Coords
+    const rawTrackCoords = [
+      { gx: -1, gy: -2 }, { gx: -1, gy: -3 }, { gx: -1, gy: -4 }, { gx: -1, gy: -5 }, { gx: -1, gy: -6 },
+      { gx: 0, gy: -6 }, { gx: 1, gy: -6 }, { gx: 1, gy: -5 }, { gx: 1, gy: -4 }, { gx: 1, gy: -3 }, { gx: 1, gy: -2 },
+      { gx: 2, gy: -1 }, { gx: 3, gy: -1 }, { gx: 4, gy: -1 }, { gx: 5, gy: -1 }, { gx: 6, gy: -1 },
+      { gx: 6, gy: 0 }, { gx: 6, gy: 1 }, { gx: 5, gy: 1 }, { gx: 4, gy: 1 }, { gx: 3, gy: 1 }, { gx: 2, gy: 1 },
+      { gx: 1, gy: 2 }, { gx: 1, gy: 3 }, { gx: 1, gy: 4 }, { gx: 1, gy: 5 }, { gx: 1, gy: 6 },
+      { gx: 0, gy: 6 }, { gx: -1, gy: 6 }, { gx: -1, gy: 5 }, { gx: -1, gy: 4 }, { gx: -1, gy: 3 }, { gx: -1, gy: 2 },
+      { gx: -2, gy: 1 }, { gx: -3, gy: 1 }, { gx: -4, gy: 1 }, { gx: -5, gy: 1 }, { gx: -6, gy: 1 },
+      { gx: -6, gy: 0 }, { gx: -6, gy: -1 }, { gx: -5, gy: -1 }, { gx: -4, gy: -1 }, { gx: -3, gy: -1 }, { gx: -2, gy: -1 }
+    ];
+
+    // Finish lanes (5 tiles per team)
+    const finishLanes = [
+      // Tim 0 (North / Green)
+      [ { gx: 0, gy: -5, gz: 0.25 }, { gx: 0, gy: -4, gz: 0.50 }, { gx: 0, gy: -3, gz: 0.75 }, { gx: 0, gy: -2, gz: 1.0 }, { gx: 0, gy: -1, gz: 1.25 } ],
+      // Tim 1 (East / Red)
+      [ { gx: 5, gy: 0, gz: 0.25 }, { gx: 4, gy: 0, gz: 0.50 }, { gx: 3, gy: 0, gz: 0.75 }, { gx: 2, gy: 0, gz: 1.0 }, { gx: 1, gy: 0, gz: 1.25 } ],
+      // Tim 2 (South / Yellow)
+      [ { gx: 0, gy: 5, gz: 0.25 }, { gx: 0, gy: 4, gz: 0.50 }, { gx: 0, gy: 3, gz: 0.75 }, { gx: 0, gy: 2, gz: 1.0 }, { gx: 0, gy: 1, gz: 1.25 } ],
+      // Tim 3 (West / Blue)
+      [ { gx: -5, gy: 0, gz: 0.25 }, { gx: -4, gy: 0, gz: 0.50 }, { gx: -3, gy: 0, gz: 0.75 }, { gx: -2, gy: 0, gz: 1.0 }, { gx: -1, gy: 0, gz: 1.25 } ]
+    ];
+
+    const exitGates = [
+      { team: 0, gx: -2, gy: -2, color: 'green' },
+      { team: 1, gx: 2, gy: -2, color: 'red' },
+      { team: 2, gx: 2, gy: 2, color: 'yellow' },
+      { team: 3, gx: -2, gy: 2, color: 'blue' }
+    ];
+
+    function draw() {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      const topX = parseInt(document.getElementById('topX').value);
+      const topY = parseInt(document.getElementById('topY').value);
+      const rightX = parseInt(document.getElementById('rightX').value);
+      const rightY = parseInt(document.getElementById('rightY').value);
+      const bottomX = parseInt(document.getElementById('bottomX').value);
+      const bottomY = parseInt(document.getElementById('bottomY').value);
+      const leftX = parseInt(document.getElementById('leftX').value);
+      const leftY = parseInt(document.getElementById('leftY').value);
+      const scale = parseFloat(document.getElementById('baseScale').value);
+      const spread = parseFloat(document.getElementById('pawnSpread').value);
+      const baseGz = parseFloat(document.getElementById('baseGz').value);
+
+      document.getElementById('topXVal').textContent = topX;
+      document.getElementById('topYVal').textContent = topY;
+      document.getElementById('rightXVal').textContent = rightX;
+      document.getElementById('rightYVal').textContent = rightY;
+      document.getElementById('bottomXVal').textContent = bottomX;
+      document.getElementById('bottomYVal').textContent = bottomY;
+      document.getElementById('leftXVal').textContent = leftX;
+      document.getElementById('leftYVal').textContent = leftY;
+      document.getElementById('scaleVal').textContent = scale;
+      document.getElementById('spreadVal').textContent = spread;
+      document.getElementById('gzVal').textContent = baseGz;
+
+      const f0 = document.getElementById('faction0').value;
+      const f1 = document.getElementById('faction1').value;
+      const f2 = document.getElementById('faction2').value;
+      const f3 = document.getElementById('faction3').value;
+
+      // Base centers:
+      // Team 0 (Atas): Behind Exit Gate (-2, -2) -> (-4.4, -4.4)
+      // Team 1 (Kanan): Behind Exit Gate (2, -2) -> (4.2, -4.2)
+      // Team 2 (Bawah): Behind Exit Gate (2, 2) -> (4.4, 4.4)
+      // Team 3 (Kiri): Behind Exit Gate (-2, 2) -> (-4.2, 4.2)
+      const baseConfigs = [
+        { team: 0, color: 'green', faction: f0, offX: topX, offY: topY, centerGx: -4.4, centerGy: -4.4 },
+        { team: 1, color: 'red', faction: f1, offX: rightX, offY: rightY, centerGx: 4.3, centerGy: -4.3 },
+        { team: 2, color: 'yellow', faction: f2, offX: bottomX, offY: bottomY, centerGx: 4.4, centerGy: 4.4 },
+        { team: 3, color: 'blue', faction: f3, offX: leftX, offY: leftY, centerGx: -4.3, centerGy: 4.3 }
+      ];
+
+      const entities = [];
+
+      // 1. Bases
+      baseConfigs.forEach(b => {
+        const { sx, sy } = iso(b.centerGx, b.centerGy, baseGz);
+        entities.push({
+          type: 'base',
+          team: b.team,
+          color: b.color,
+          faction: b.faction,
+          centerGx: b.centerGx,
+          centerGy: b.centerGy,
+          sx: sx + b.offX,
+          sy: sy + b.offY,
+          depth: (b.centerGx + b.centerGy) - 2.5
+        });
+
+        // 4 Pawn Slots per base
+        // Calculate 4 points on the platform floor
+        const pawnSlots = [
+          { gx: b.centerGx - spread * 0.7, gy: b.centerGy - spread * 0.7, num: 1 },
+          { gx: b.centerGx + spread * 0.7, gy: b.centerGy - spread * 0.7, num: 2 },
+          { gx: b.centerGx - spread * 0.7, gy: b.centerGy + spread * 0.7, num: 3 },
+          { gx: b.centerGx + spread * 0.7, gy: b.centerGy + spread * 0.7, num: 4 }
+        ];
+
+        pawnSlots.forEach(ps => {
+          const pPos = iso(ps.gx, ps.gy, baseGz + 0.15);
+          entities.push({
+            type: 'pawn',
+            team: b.team,
+            color: b.color,
+            faction: b.faction,
+            num: ps.num,
+            sx: pPos.sx + b.offX,
+            sy: pPos.sy + b.offY,
+            depth: (ps.gx + ps.gy) + 0.1
+          });
+        });
+      });
+
+      // 2. Outer track tiles
+      rawTrackCoords.forEach((c, i) => {
+        const { sx, sy } = iso(c.gx, c.gy, 0);
+        let key = 'tile-normal';
+        if (i === 0) key = 'tile-entrance-green';
+        else if (i === 11) key = 'tile-entrance-red';
+        else if (i === 22) key = 'tile-entrance-yellow';
+        else if (i === 33) key = 'tile-entrance-blue';
+
+        entities.push({
+          type: 'tile',
+          key,
+          sx,
+          sy,
+          depth: c.gx + c.gy
+        });
+      });
+
+      // 3. Exit Gates
+      exitGates.forEach(g => {
+        const { sx, sy } = iso(g.gx, g.gy, 0);
+        entities.push({
+          type: 'tile',
+          key: `tile-entrance-${g.color}`,
+          sx,
+          sy,
+          depth: (g.gx + g.gy) - 0.05
+        });
+      });
+
+      // 4. Finish Lanes
+      finishLanes.forEach((lane, tIdx) => {
+        const laneColor = ['green', 'red', 'yellow', 'blue'][tIdx];
+        lane.forEach(tile => {
+          const { sx, sy } = iso(tile.gx, tile.gy, tile.gz);
+          entities.push({
+            type: 'tile',
+            key: `tile-ended-${laneColor}`,
+            sx,
+            sy,
+            depth: tile.gx + tile.gy + tile.gz * 0.2
+          });
+        });
+      });
+
+      // Sort by depth (Painter's Algorithm)
+      entities.sort((a, b) => a.depth - b.depth);
+
+      // Render entities
+      entities.forEach(ent => {
+        if (ent.type === 'tile') {
+          const img = images[ent.key] || images['tile-normal'];
+          if (img) {
+            ctx.drawImage(img, ent.sx - 88/2, ent.sy - 55/2, 88, 55);
+          }
+        } else if (ent.type === 'base') {
+          const imgKey = `base-${ent.faction}-${ent.color}`;
+          const img = images[imgKey];
+          if (img) {
+            const bw = img.width * scale;
+            const bh = img.height * scale;
+            // Floor center in native image is (256, 195)
+            const anchorX = (256 / 512) * bw;
+            const anchorY = (195 / 382) * bh;
+            ctx.drawImage(img, ent.sx - anchorX, ent.sy - anchorY, bw, bh);
+          }
+        } else if (ent.type === 'pawn') {
+          // Draw 3D Miniature Pawn standing on base floor
+          ctx.save();
+          // Shadow
+          ctx.beginPath();
+          ctx.ellipse(ent.sx, ent.sy, 15, 7, 0, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.38)';
+          ctx.fill();
+
+          // Render 3D Miniature Pawn Sprite
+          const pawnImg = images[`pawn-${ent.faction}-${ent.color}`] || images[`pawn-dragon-${ent.color}`];
+          if (pawnImg) {
+            const pw = 160 * 0.35;
+            const ph = 200 * 0.35;
+            const anchorX = pw * 0.50;
+            const anchorY = ph * 0.745;
+            ctx.drawImage(pawnImg, ent.sx - anchorX, ent.sy - anchorY, pw, ph);
+          } else {
+            ctx.fillStyle = ent.color === 'yellow' ? '#facc15' : ent.color === 'red' ? '#ef4444' : ent.color === 'blue' ? '#38bdf8' : '#34d399';
+            ctx.beginPath();
+            ctx.arc(ent.sx, ent.sy - 15, 8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Number badge
+          ctx.font = 'bold 9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2;
+          ctx.strokeText(ent.num, ent.sx, ent.sy - 48);
+          ctx.fillText(ent.num, ent.sx, ent.sy - 48);
+          ctx.restore();
+        }
+      });
+    }
+
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input', draw);
+    });
+  </script>
+</body>
+</html>

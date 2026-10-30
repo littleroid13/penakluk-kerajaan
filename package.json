@@ -1,0 +1,21 @@
+{
+  "name": "penakhlukan-kerajaan",
+  "version": "1.0.0",
+  "description": "Game Edukasi Web Interaktif Board Game 3D Isometris Bertema Medieval",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "serve": "node server.js --no-open"
+  },
+  "keywords": [
+    "board-game",
+    "medieval",
+    "isometric-3d",
+    "educational-game",
+    "canvas",
+    "vanilla-js"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}
